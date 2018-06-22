@@ -9,7 +9,7 @@ android {
     compileSdkVersion 27
     defaultConfig {
         applicationId "com.geeklabs.imtranslator"
-        minSdkVersion 24
+        minSdkVersion 21
         targetSdkVersion 27
         versionCode 1
         versionName "1.0"
@@ -66,7 +66,15 @@ dependencies {
     implementation "org.jetbrains.anko:anko-commons:0.10.4"
 
 
-    implementation 'com.google.api-client:google-api-client-android:1.20.0' exclude module: 'httpclient'
+    implementation ('com.google.api-client:google-api-client-android:1.20.0') {
+        exclude module: 'guava-jdk5'
+        exclude module: 'httpclient'
+    }
     implementation 'com.google.http-client:google-http-client-gson:1.20.0' exclude module: 'httpclient'
-    implementation 'com.google.apis:google-api-services-vision:v1-rev2-1.21.0' exclude module: 'httpclient'
+    implementation ('com.google.apis:google-api-services-vision:v1-rev2-1.21.0'){
+        exclude module: 'guava-jdk5'
+        exclude module: 'httpclient'
+    }
+
+    implementation 'com.google.cloud:google-cloud-translate:1.31.0'
 }

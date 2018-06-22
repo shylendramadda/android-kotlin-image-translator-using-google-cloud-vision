@@ -5,6 +5,7 @@ import android.app.Activity
 import android.content.Intent
 import android.content.pm.PackageManager
 import android.graphics.Bitmap
+import android.net.Uri
 import android.os.Build
 import android.os.Bundle
 import android.provider.MediaStore
@@ -22,10 +23,14 @@ import com.google.api.client.json.gson.GsonFactory
 import com.google.api.services.vision.v1.Vision
 import com.google.api.services.vision.v1.VisionRequestInitializer
 import com.google.api.services.vision.v1.model.*
+import com.google.cloud.translate.Translate
+import com.google.cloud.translate.TranslateOptions
+import com.google.cloud.translate.Translation
 import io.fabric.sdk.android.Fabric
 import kotlinx.android.synthetic.main.activity_main.*
 import org.jetbrains.anko.doAsync
 import java.io.ByteArrayOutputStream
+import java.io.File
 import java.io.IOException
 import java.util.*
 
@@ -33,10 +38,9 @@ class MainActivity : AppCompatActivity() {
 
     private val TAKE_PHOTO_REQUEST: Int = 560
     private lateinit var feature: Feature
-    private lateinit var bitmap: Bitmap
     private val visionAPI = arrayOf("LANDMARK_DETECTION", "LOGO_DETECTION", "SAFE_SEARCH_DETECTION", "IMAGE_PROPERTIES", "LABEL_DETECTION")
 
-    val apiKey :String  ="MIIEvAIBADANBgkqhkiG9w0BAQEFAASCBKYwggSiAgEAAoIBAQCyhZkZA2Oyf2sk\\nOAISv9o/J9Gwu59UHsd4tXbQjEpzlLvlMz4C4XWV2CR6bTlaLpKUfhTFZNXzs1Zg\\n3mKgOb3sn9Cgerpn7ILqSzqf/CSUS1WVoEtDRMbcsWiJDODDpK21VFLHv0cu6gjU\\nY8lWex//kBRhEV+/nb7u/QbUpxZYPr0+kZClCEEzHy6C/WWG623qu5efSmPnPHRD\\n+HlsIOexdeFi/nPWGyby8wH6gPOekuimRUGHA5prApNth33NzXoEQYW98OofJpm4\\nRjPuOE0hFgAw2c4P30yjCGMhr41j0MiUkkxQosCpKZFlzfHmSnJlTNbmU4haSSvx\\n+DZHkm2LAgMBAAECggEAJf7aRWEbzIdjCdvj0RLFRDDY5+ke8Zv1b4MLzTo2tF/h\\nF9iup5VN3f0ZUndBwChuaS1mhVa/VLWEOmzKh/iSLDUdhbJpTyoe+PfW++sB7BAW\\noJhzvFb8jkcyDQ1RH0LC9/eBAON8pocIJxAv73iYKGAFfl1gyBsuYpY26HbBgjlI\\nc6E81hMVFwVk/lE0U7AbKLbOlxCqM3gSkOuZF9av8g+VbgQKyKptWPFoBRBVLnT2\\nRruXZhTRavIsEQNtwAQ0wLVXB+u2lQN7uGvkFi4craLAAzmTcbWEudUVlHBryO/X\\n6SXjDBe67GHD1kmgWakurfl3XjltHeTq5MC71TCpbQKBgQDzJKZxFtE1K/0TQUGd\\nPzpq/Ue15KbxyFUvv4b/wbOVXZIUSl+TyR0iaoJDKAt+ZAWt3xtPQP8/6/8wTj3O\\nfcG5B74NWJ6MyoqOaxudJLgLzZkoqp2qDdkI94iAQCxGMhMW4B/kjOYJXEaSSgu0\\np2k03Lcy3IH0Vw+ia321fN/xPwKBgQC79jC/MgKJDq07nBCB42ITtwIo2aQ9QHUO\\nC4wrdrri5DpwD9R2DEEW3sdMxpPrds19OOa3UdwrS8T1XdOYZlGAF0ewfy+mPmRK\\nu2AdtaX5QfPVExzYZYSb8Ugx6yz+1tzVTRXRorSYK9Q+5OR3KcOMOrMu5TeIhIEX\\nVmsTXLAktQKBgBkv8cIDUBbHAMdu2iI0+5M7u6L/FcA0NYblu1FhOn49nDVX4wDH\\nM6puCCJ20oH8UI5Lb2PNYuO3Sc8yO7rZUikdwTVWuc3x6VqJg+nKdPpcCQKqcfy8\\nxH/mTJCklTGMXGfhPcyKQAY2NeVPoFjNgtuEBcJSD3BFWIxFwFb9oaE3AoGAE7h0\\nzNqWYYLksghhwv70X1UoKNkM3lBQ97RGdJj0arG/X9qJVAldGuUsy+VZx66jSKwb\\nqMgx7Wj5tTSu6qJxkprerqnpeeu54g1evD8+trQwvP5QXHPqQeJCzNn70pEAgnCg\\nBWqov/55OlARmF8NYT0XZ6gs92nPkX9DpLho0rECgYBjHOnSWk54MYmMDzljhbWg\\n0CsZBGlbVb1Bgo5i9f3OB48gEj5A+wwUAEVEYa1BJmPJfNfFUMjQGIPq8ibJntWP\\nuLhrbq4GaqanpZeQPWkmXG7gwD4dqQAiypJK3Vnug6GUEiklOPLdytY/Vq4eauXc\\nfa3bIdxWsxUH3h0s8KjnDA=="
+    val apiKey: String = "AIzaSyCH0OkZs2XeMt3TPaHp-BgIqiUBzWe1w8w"
 
     private val api = visionAPI[4]
 
@@ -45,6 +49,12 @@ class MainActivity : AppCompatActivity() {
         setContentView(R.layout.activity_main)
 
         Fabric.with(this, Crashlytics())
+
+        feature = Feature()
+//        feature.type = "LANDMARK_DETECTION"
+        feature.type = "LABEL_DETECTION"
+        feature.maxResults = 10
+
         iv_photo.setOnClickListener {
             openCameraIntent()
         }
@@ -74,7 +84,7 @@ class MainActivity : AppCompatActivity() {
             Glide.with(this).load(photoUri).into(iv_photo)
 
             //getDataFromImage(photoUri.path)
-            bitmap = MediaStore.Images.Media.getBitmap(this.getContentResolver(), photoUri);
+            val bitmap = MediaStore.Images.Media.getBitmap(this.getContentResolver(), Uri.fromFile(File(photoUri.path)));
             processImage(bitmap, feature)
         }
     }
@@ -111,11 +121,11 @@ class MainActivity : AppCompatActivity() {
 
                 convertResponseToString(response)
             } catch (e: GoogleJsonResponseException) {
-                // Log.d(TAG, "failed to make API request because " + e.getContent());
+                Log.d("MainActivity", "failed to make API request because " + e.getContent());
             } catch (e: IOException) {
-                // Log.d(TAG, "failed to make API request because of other IOException " + e.getMessage());
+                Log.d("MainActivity", "failed to make API request because of other IOException " + e.message);
             }
-            //   return "Cloud Vision API request failed. Check logs for details.";
+//               return "Cloud Vision API request failed. Check logs for details.";
         }
     }
 
@@ -173,16 +183,37 @@ class MainActivity : AppCompatActivity() {
 
     fun formatAnnotation(entityAnnotation: List<EntityAnnotation>): String {
         var message = "";
+        var imageName = ""
 
         if (entityAnnotation != null) {
             for (entity: EntityAnnotation in entityAnnotation) {
                 message = message + "    " + entity.getDescription() + " " + entity.getScore();
                 message += "\n";
             }
+
+            imageName = entityAnnotation[2].description
+
         } else {
             message = "Nothing Found";
         }
         tv_desc.text = message
+        println("" + message);
+
+        // Instantiates a client
+        var translate = TranslateOptions.getDefaultInstance().getService();
+
+        // Translates some text into Russian
+        var translation =
+                translate.translate(
+                        imageName,
+                        Translate.TranslateOption.sourceLanguage("en"),
+                        Translate.TranslateOption.targetLanguage("te"));
+
+        println("" + imageName);
+        println("" + translation.getTranslatedText());
+
+        tv_translated_text.text = translation.getTranslatedText()
+
         return message;
     }
 }

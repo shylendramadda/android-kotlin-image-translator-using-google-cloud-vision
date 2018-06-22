@@ -1,4 +1,5 @@
 <resources>
     <string name="app_name">ImTranslator</string>
     <string name="lbl_desc">Description</string>
+    <string name="lbl_trans_text">Translated Text</string>
 </resources>
