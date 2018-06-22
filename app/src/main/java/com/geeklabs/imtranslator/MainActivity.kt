@@ -1,12 +1,14 @@
 package com.geeklabs.imtranslator
 
 import android.Manifest
-import android.annotation.TargetApi
 import android.app.Activity
 import android.content.Intent
 import android.content.pm.PackageManager
+import android.graphics.Bitmap
 import android.os.Build
 import android.os.Bundle
+import android.provider.MediaStore
+import android.support.annotation.NonNull
 import android.support.v4.app.ActivityCompat
 import android.support.v4.content.ContextCompat
 import android.support.v7.app.AppCompatActivity
@@ -14,24 +16,29 @@ import android.util.Log
 import com.bumptech.glide.Glide
 import com.crashlytics.android.Crashlytics
 import com.desmond.squarecamera.CameraActivity
-import com.google.cloud.vision.v1.AnnotateImageRequest
-import com.google.cloud.vision.v1.Feature
-import com.google.cloud.vision.v1.Feature.Type
-import com.google.cloud.vision.v1.Image
-import com.google.cloud.vision.v1.ImageAnnotatorClient
-import com.google.protobuf.ByteString
+import com.google.api.client.extensions.android.http.AndroidHttp
+import com.google.api.client.googleapis.json.GoogleJsonResponseException
+import com.google.api.client.json.gson.GsonFactory
+import com.google.api.services.vision.v1.Vision
+import com.google.api.services.vision.v1.VisionRequestInitializer
+import com.google.api.services.vision.v1.model.*
 import io.fabric.sdk.android.Fabric
 import kotlinx.android.synthetic.main.activity_main.*
 import org.jetbrains.anko.doAsync
-import org.jetbrains.anko.uiThread
-import java.nio.file.Files
-import java.nio.file.Paths
+import java.io.ByteArrayOutputStream
+import java.io.IOException
 import java.util.*
 
 class MainActivity : AppCompatActivity() {
 
     private val TAKE_PHOTO_REQUEST: Int = 560
-//    val client = OkHttpClient()
+    private lateinit var feature: Feature
+    private lateinit var bitmap: Bitmap
+    private val visionAPI = arrayOf("LANDMARK_DETECTION", "LOGO_DETECTION", "SAFE_SEARCH_DETECTION", "IMAGE_PROPERTIES", "LABEL_DETECTION")
+
+    val apiKey :String  ="MIIEvAIBADANBgkqhkiG9w0BAQEFAASCBKYwggSiAgEAAoIBAQCyhZkZA2Oyf2sk\\nOAISv9o/J9Gwu59UHsd4tXbQjEpzlLvlMz4C4XWV2CR6bTlaLpKUfhTFZNXzs1Zg\\n3mKgOb3sn9Cgerpn7ILqSzqf/CSUS1WVoEtDRMbcsWiJDODDpK21VFLHv0cu6gjU\\nY8lWex//kBRhEV+/nb7u/QbUpxZYPr0+kZClCEEzHy6C/WWG623qu5efSmPnPHRD\\n+HlsIOexdeFi/nPWGyby8wH6gPOekuimRUGHA5prApNth33NzXoEQYW98OofJpm4\\nRjPuOE0hFgAw2c4P30yjCGMhr41j0MiUkkxQosCpKZFlzfHmSnJlTNbmU4haSSvx\\n+DZHkm2LAgMBAAECggEAJf7aRWEbzIdjCdvj0RLFRDDY5+ke8Zv1b4MLzTo2tF/h\\nF9iup5VN3f0ZUndBwChuaS1mhVa/VLWEOmzKh/iSLDUdhbJpTyoe+PfW++sB7BAW\\noJhzvFb8jkcyDQ1RH0LC9/eBAON8pocIJxAv73iYKGAFfl1gyBsuYpY26HbBgjlI\\nc6E81hMVFwVk/lE0U7AbKLbOlxCqM3gSkOuZF9av8g+VbgQKyKptWPFoBRBVLnT2\\nRruXZhTRavIsEQNtwAQ0wLVXB+u2lQN7uGvkFi4craLAAzmTcbWEudUVlHBryO/X\\n6SXjDBe67GHD1kmgWakurfl3XjltHeTq5MC71TCpbQKBgQDzJKZxFtE1K/0TQUGd\\nPzpq/Ue15KbxyFUvv4b/wbOVXZIUSl+TyR0iaoJDKAt+ZAWt3xtPQP8/6/8wTj3O\\nfcG5B74NWJ6MyoqOaxudJLgLzZkoqp2qDdkI94iAQCxGMhMW4B/kjOYJXEaSSgu0\\np2k03Lcy3IH0Vw+ia321fN/xPwKBgQC79jC/MgKJDq07nBCB42ITtwIo2aQ9QHUO\\nC4wrdrri5DpwD9R2DEEW3sdMxpPrds19OOa3UdwrS8T1XdOYZlGAF0ewfy+mPmRK\\nu2AdtaX5QfPVExzYZYSb8Ugx6yz+1tzVTRXRorSYK9Q+5OR3KcOMOrMu5TeIhIEX\\nVmsTXLAktQKBgBkv8cIDUBbHAMdu2iI0+5M7u6L/FcA0NYblu1FhOn49nDVX4wDH\\nM6puCCJ20oH8UI5Lb2PNYuO3Sc8yO7rZUikdwTVWuc3x6VqJg+nKdPpcCQKqcfy8\\nxH/mTJCklTGMXGfhPcyKQAY2NeVPoFjNgtuEBcJSD3BFWIxFwFb9oaE3AoGAE7h0\\nzNqWYYLksghhwv70X1UoKNkM3lBQ97RGdJj0arG/X9qJVAldGuUsy+VZx66jSKwb\\nqMgx7Wj5tTSu6qJxkprerqnpeeu54g1evD8+trQwvP5QXHPqQeJCzNn70pEAgnCg\\nBWqov/55OlARmF8NYT0XZ6gs92nPkX9DpLho0rECgYBjHOnSWk54MYmMDzljhbWg\\n0CsZBGlbVb1Bgo5i9f3OB48gEj5A+wwUAEVEYa1BJmPJfNfFUMjQGIPq8ibJntWP\\nuLhrbq4GaqanpZeQPWkmXG7gwD4dqQAiypJK3Vnug6GUEiklOPLdytY/Vq4eauXc\\nfa3bIdxWsxUH3h0s8KjnDA=="
+
+    private val api = visionAPI[4]
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -66,71 +73,116 @@ class MainActivity : AppCompatActivity() {
             Log.i("URL", photoUri.path)
             Glide.with(this).load(photoUri).into(iv_photo)
 
-            getDataFromImage(photoUri.path)
+            //getDataFromImage(photoUri.path)
+            bitmap = MediaStore.Images.Media.getBitmap(this.getContentResolver(), photoUri);
+            processImage(bitmap, feature)
         }
     }
 
-    @TargetApi(Build.VERSION_CODES.O)
-    fun getDataFromImage(fileName: String) {
+    private fun processImage(bitmap: Bitmap, feature: Feature) {
+
+        var featureList = ArrayList<Feature>();
+        featureList.add(feature);
+
+        val annotateImageRequests = ArrayList<AnnotateImageRequest>();
+        val annotateImageReq = AnnotateImageRequest();
+        annotateImageReq.setFeatures(featureList);
+        annotateImageReq.setImage(getImageEncodeImage(bitmap));
+        annotateImageRequests.add(annotateImageReq);
         doAsync {
-            // Instantiates a client
-            ImageAnnotatorClient.create().use { vision ->
+            try {
 
-                // The path to the image file to annotate
-//            val fileName = "./resources/wakeupcat.jpg"
+                val httpTransport = AndroidHttp.newCompatibleTransport();
+                val jsonFactory = GsonFactory.getDefaultInstance();
 
-                // Reads the image file into memory
-                val path = Paths.get(fileName)
-                val data = Files.readAllBytes(path)
-                val imgBytes = ByteString.copyFrom(data)
+                val requestInitializer = VisionRequestInitializer(apiKey);
 
-                // Builds the image annotation request
-                val requests = ArrayList<AnnotateImageRequest>()
-                val img = Image.newBuilder().setContent(imgBytes).build()
-                val feat = Feature.newBuilder().setType(Type.LABEL_DETECTION).build()
-                val request = AnnotateImageRequest.newBuilder()
-                        .addFeatures(feat)
-                        .setImage(img)
-                        .build()
-                requests.add(request)
+                val builder = Vision.Builder(httpTransport, jsonFactory, null);
+                builder.setVisionRequestInitializer(requestInitializer);
 
-                // Performs label detection on the image file
-                val response = vision.batchAnnotateImages(requests)
-                val responses = response.responsesList
+                val vision = builder.build();
 
-                for (res in responses) {
-                    if (res.hasError()) {
-                        uiThread {
-                            System.out.printf("Error: %s\n", res.error.message)
-                            tv_desc.text = "" + res.error.message
-                        }
-//                        return
-                    }
+                val batchAnnotateImagesRequest = BatchAnnotateImagesRequest();
+                batchAnnotateImagesRequest.setRequests(annotateImageRequests);
 
-                    for (annotation in res.labelAnnotationsList) {
-                        annotation.allFields.forEach { k, v ->
-                            uiThread {
-                                System.out.printf("%s : %s\n", k, v.toString())
-                                tv_desc.text = v.toString()
-                            }
-                        }
-                    }
-                }
+                val annotateRequest = vision.images().annotate(batchAnnotateImagesRequest);
+                annotateRequest.setDisableGZipContent(true);
+                val response = annotateRequest.execute();
+
+                convertResponseToString(response)
+            } catch (e: GoogleJsonResponseException) {
+                // Log.d(TAG, "failed to make API request because " + e.getContent());
+            } catch (e: IOException) {
+                // Log.d(TAG, "failed to make API request because of other IOException " + e.getMessage());
             }
+            //   return "Cloud Vision API request failed. Check logs for details.";
         }
     }
 
+    @NonNull
+    fun getImageEncodeImage(bitmap: Bitmap): Image {
+        val base64EncodedImage = Image();
+        // Convert the bitmap to a JPEG
+        // Just in case it's a format that Android understands but Cloud Vision
+        val byteArrayOutputStream = ByteArrayOutputStream();
+        bitmap.compress(Bitmap.CompressFormat.JPEG, 90, byteArrayOutputStream);
+        val imageBytes = byteArrayOutputStream.toByteArray();
 
-    /*fun run(url: String) {
-        val request = Request.Builder()
-                .url(url)
-                .build()
-
-        client.newCall(request).enqueue(object : Callback {
-            override fun onFailure(call: Call, e: IOException) {}
-            override fun onResponse(call: Call, response: Response) = println(response.body()?.string())
-        })
-    }*/
+        // Base64 encode the JPEG
+        base64EncodedImage.encodeContent(imageBytes);
+        return base64EncodedImage;
+    }
 
 
+    fun convertResponseToString(response: BatchAnnotateImagesResponse): String {
+
+        val imageResponses = response.getResponses().get(0);
+
+        var entityAnnotations = null;
+
+        var message = "";
+
+        if (api.equals("LABEL_DETECTION")) {
+            message = formatAnnotation(imageResponses.getLabelAnnotations());
+            return message;
+        }
+        /*switch (api) {
+            case "LANDMARK_DETECTION":
+                entityAnnotations = imageResponses.getLandmarkAnnotations();
+                message = formatAnnotation(entityAnnotations);
+                break;
+            case "LOGO_DETECTION":
+                entityAnnotations = imageResponses.getLogoAnnotations();
+                message = formatAnnotation(entityAnnotations);
+                break;
+            case "SAFE_SEARCH_DETECTION":
+                SafeSearchAnnotation annotation = imageResponses.getSafeSearchAnnotation();
+                message = getImageAnnotation(annotation);
+                break;
+            case "IMAGE_PROPERTIES":
+                ImageProperties imageProperties = imageResponses.getImagePropertiesAnnotation();
+                message = getImageProperty(imageProperties);
+                break;
+            case "LABEL_DETECTION":
+                entityAnnotations = imageResponses.getLabelAnnotations();
+                message = formatAnnotation(entityAnnotations);
+                break;
+        }*/
+        return message;
+    }
+
+    fun formatAnnotation(entityAnnotation: List<EntityAnnotation>): String {
+        var message = "";
+
+        if (entityAnnotation != null) {
+            for (entity: EntityAnnotation in entityAnnotation) {
+                message = message + "    " + entity.getDescription() + " " + entity.getScore();
+                message += "\n";
+            }
+        } else {
+            message = "Nothing Found";
+        }
+        tv_desc.text = message
+        return message;
+    }
 }
