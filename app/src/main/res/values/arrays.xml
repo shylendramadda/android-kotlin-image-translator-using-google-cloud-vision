@@ -1,0 +1,10 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string-array name="languages">
+        <item>Telugu</item>
+        <item>Bengali</item>
+        <item>German</item>
+        <item>Haitian Creole</item>
+        <item>Greek</item>
+    </string-array>>
+</resources>
