@@ -17,6 +17,8 @@ import android.util.Log
 import com.bumptech.glide.Glide
 import com.crashlytics.android.Crashlytics
 import com.desmond.squarecamera.CameraActivity
+import com.geeklabs.imtranslator.R.id.tv_desc
+import com.geeklabs.imtranslator.R.id.tv_translated_text
 import com.google.api.client.extensions.android.http.AndroidHttp
 import com.google.api.client.googleapis.json.GoogleJsonResponseException
 import com.google.api.client.json.gson.GsonFactory
@@ -196,11 +198,13 @@ class MainActivity : AppCompatActivity() {
         } else {
             message = "Nothing Found";
         }
-        tv_desc.text = message
+        runOnUiThread(Runnable { tv_desc.text = message })
+
         println("" + message);
 
         // Instantiates a client
-        var translate = TranslateOptions.getDefaultInstance().getService();
+        var translate = TranslateOptions.newBuilder().setApiKey(apiKey).build().getService();
+
 
         // Translates some text into Russian
         var translation =
@@ -212,7 +216,7 @@ class MainActivity : AppCompatActivity() {
         println("" + imageName);
         println("" + translation.getTranslatedText());
 
-        tv_translated_text.text = translation.getTranslatedText()
+        runOnUiThread(Runnable { tv_translated_text.text = translation.getTranslatedText() })
 
         return message;
     }
