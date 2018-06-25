@@ -14,11 +14,12 @@ import android.support.v4.app.ActivityCompat
 import android.support.v4.content.ContextCompat
 import android.support.v7.app.AppCompatActivity
 import android.util.Log
+import android.widget.ArrayAdapter
 import com.bumptech.glide.Glide
 import com.crashlytics.android.Crashlytics
 import com.desmond.squarecamera.CameraActivity
-import com.geeklabs.imtranslator.R.id.tv_desc
-import com.geeklabs.imtranslator.R.id.tv_translated_text
+import com.geeklabs.imtranslator.modal.Language
+import com.geeklabs.imtranslator.util.PrefUtil
 import com.google.api.client.extensions.android.http.AndroidHttp
 import com.google.api.client.googleapis.json.GoogleJsonResponseException
 import com.google.api.client.json.gson.GsonFactory
@@ -27,13 +28,14 @@ import com.google.api.services.vision.v1.VisionRequestInitializer
 import com.google.api.services.vision.v1.model.*
 import com.google.cloud.translate.Translate
 import com.google.cloud.translate.TranslateOptions
-import com.google.cloud.translate.Translation
+import com.google.gson.Gson
 import io.fabric.sdk.android.Fabric
 import kotlinx.android.synthetic.main.activity_main.*
 import org.jetbrains.anko.doAsync
 import java.io.ByteArrayOutputStream
 import java.io.File
 import java.io.IOException
+import java.lang.System.out
 import java.util.*
 
 class MainActivity : AppCompatActivity() {
@@ -45,6 +47,8 @@ class MainActivity : AppCompatActivity() {
     val apiKey: String = "AIzaSyCH0OkZs2XeMt3TPaHp-BgIqiUBzWe1w8w"
 
     private val api = visionAPI[4]
+
+    private lateinit var translate: Translate
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -61,6 +65,39 @@ class MainActivity : AppCompatActivity() {
             openCameraIntent()
         }
 
+
+        // Instantiates a client
+        val prefUtil = PrefUtil(this)
+        var languages = prefUtil.lanagues
+        val nullOrEmpty = languages.isNullOrEmpty()
+        if (nullOrEmpty){
+            translate = TranslateOptions.newBuilder().setApiKey(apiKey).build().getService();
+
+            doAsync {
+                var target = Translate.LanguageListOption.targetLanguage("en");
+                var languages = translate.listSupportedLanguages(target);
+
+                for (language in languages) {
+                    out.printf("Name: %s, Code: %s\n", language.getName(), language.getCode());
+                }
+                val gson = Gson()
+                val fromJson = gson.toJson(languages)
+                prefUtil.lanagues = fromJson
+                addLanguagesToSpinner(languages)
+            }
+        } else {
+            val gson = Gson()
+            val languageList = gson.fromJson(languages, Array<com.google.cloud.translate.Language>::class.java).asList()
+            addLanguagesToSpinner(languageList)
+        }
+    }
+
+    private fun addLanguagesToSpinner(languageList: List<com.google.cloud.translate.Language>) {
+            ArrayAdapter<List<com.google.cloud.translate.Language>>(
+                    this,
+                    R.layout.item_text,
+                    languageList
+            )
     }
 
     private fun openCameraIntent() {
@@ -202,11 +239,9 @@ class MainActivity : AppCompatActivity() {
 
         println("" + message);
 
-        // Instantiates a client
-        var translate = TranslateOptions.newBuilder().setApiKey(apiKey).build().getService();
-
 
         // Translates some text into Russian
+
         var translation =
                 translate.translate(
                         imageName,
