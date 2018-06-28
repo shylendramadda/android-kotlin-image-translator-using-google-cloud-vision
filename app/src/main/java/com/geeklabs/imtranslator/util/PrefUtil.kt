@@ -9,6 +9,6 @@ class PrefUtil(context: Context) {
 
     private val LANGAUAGES: String = "languages"
     var lanagues: String
-        get() = prefs.getString(LANGAUAGES, null)
+        get() = prefs.getString(LANGAUAGES, "")
         set(value) = prefs.edit().putString(LANGAUAGES, value).apply()
 }

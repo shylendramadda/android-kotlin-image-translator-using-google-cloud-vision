@@ -14,11 +14,11 @@ import android.support.v4.app.ActivityCompat
 import android.support.v4.content.ContextCompat
 import android.support.v7.app.AppCompatActivity
 import android.util.Log
-import android.widget.ArrayAdapter
+import android.view.View
+import android.widget.AdapterView
 import com.bumptech.glide.Glide
 import com.crashlytics.android.Crashlytics
 import com.desmond.squarecamera.CameraActivity
-import com.geeklabs.imtranslator.modal.Language
 import com.geeklabs.imtranslator.util.PrefUtil
 import com.google.api.client.extensions.android.http.AndroidHttp
 import com.google.api.client.googleapis.json.GoogleJsonResponseException
@@ -26,6 +26,7 @@ import com.google.api.client.json.gson.GsonFactory
 import com.google.api.services.vision.v1.Vision
 import com.google.api.services.vision.v1.VisionRequestInitializer
 import com.google.api.services.vision.v1.model.*
+import com.google.cloud.translate.Language
 import com.google.cloud.translate.Translate
 import com.google.cloud.translate.TranslateOptions
 import com.google.gson.Gson
@@ -48,8 +49,6 @@ class MainActivity : AppCompatActivity() {
 
     private val api = visionAPI[4]
 
-    private lateinit var translate: Translate
-
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         setContentView(R.layout.activity_main)
@@ -70,10 +69,11 @@ class MainActivity : AppCompatActivity() {
         val prefUtil = PrefUtil(this)
         var languages = prefUtil.lanagues
         val nullOrEmpty = languages.isNullOrEmpty()
-        if (nullOrEmpty){
-            translate = TranslateOptions.newBuilder().setApiKey(apiKey).build().getService();
+        if (nullOrEmpty) {
+
 
             doAsync {
+                val translate = TranslateOptions.newBuilder().setApiKey(apiKey).build().getService();
                 var target = Translate.LanguageListOption.targetLanguage("en");
                 var languages = translate.listSupportedLanguages(target);
 
@@ -93,11 +93,8 @@ class MainActivity : AppCompatActivity() {
     }
 
     private fun addLanguagesToSpinner(languageList: List<com.google.cloud.translate.Language>) {
-            ArrayAdapter<List<com.google.cloud.translate.Language>>(
-                    this,
-                    R.layout.item_text,
-                    languageList
-            )
+        val customAdapter = CustomAdapter(this, languageList)
+        sp_language.adapter = customAdapter
     }
 
     private fun openCameraIntent() {
@@ -127,6 +124,7 @@ class MainActivity : AppCompatActivity() {
             processImage(bitmap, feature)
         }
     }
+
 
     private fun processImage(bitmap: Bitmap, feature: Feature) {
 
@@ -222,37 +220,58 @@ class MainActivity : AppCompatActivity() {
 
     fun formatAnnotation(entityAnnotation: List<EntityAnnotation>): String {
         var message = "";
-        var imageName = ""
+        var translatedText = ""
 
         if (entityAnnotation != null) {
             for (entity: EntityAnnotation in entityAnnotation) {
                 message = message + "    " + entity.getDescription() + " " + entity.getScore();
-                message += "\n";
+                message += "@";
+
+
             }
 
-            imageName = entityAnnotation[2].description
+            sp_language.onItemSelectedListener = object : AdapterView.OnItemSelectedListener {
+                override fun onNothingSelected(parent: AdapterView<*>?) {
+
+                }
+
+                override fun onItemSelected(parent: AdapterView<*>?, view: View?, position: Int, id: Long) {
+                    processTranslate(message);
+                }
+
+            }
+
+            // Translates some text into Russian
+            processTranslate(message);
+
 
         } else {
             message = "Nothing Found";
         }
+        message = message.replace("@", "\n")
         runOnUiThread(Runnable { tv_desc.text = message })
 
-        println("" + message);
 
-
-        // Translates some text into Russian
-
-        var translation =
-                translate.translate(
-                        imageName,
-                        Translate.TranslateOption.sourceLanguage("en"),
-                        Translate.TranslateOption.targetLanguage("te"));
-
-        println("" + imageName);
-        println("" + translation.getTranslatedText());
-
-        runOnUiThread(Runnable { tv_translated_text.text = translation.getTranslatedText() })
 
         return message;
+    }
+
+    private fun processTranslate(message: String) {
+
+        doAsync {
+            var selectedItem = sp_language.selectedItem
+            var language = selectedItem as Language
+            val translate = TranslateOptions.newBuilder().setApiKey(apiKey).build().getService();
+            var translation =
+                    translate.translate(
+                            message,
+                            Translate.TranslateOption.sourceLanguage("en"),
+                            Translate.TranslateOption.targetLanguage(language.code));
+
+
+            var translatedText = translation.getTranslatedText();
+            translatedText = translatedText.replace("@", "\n")
+            runOnUiThread(Runnable { tv_translated_text.text = translatedText })
+        }
     }
 }
