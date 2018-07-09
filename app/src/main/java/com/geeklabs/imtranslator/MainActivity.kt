@@ -13,6 +13,7 @@ import android.support.annotation.NonNull
 import android.support.v4.app.ActivityCompat
 import android.support.v4.content.ContextCompat
 import android.support.v7.app.AppCompatActivity
+import android.support.v7.widget.LinearLayoutManager
 import android.util.Log
 import android.view.View
 import android.widget.AdapterView
@@ -38,6 +39,7 @@ import java.io.File
 import java.io.IOException
 import java.lang.System.out
 import java.util.*
+import kotlin.collections.ArrayList
 
 class MainActivity : AppCompatActivity() {
 
@@ -54,6 +56,7 @@ class MainActivity : AppCompatActivity() {
         setContentView(R.layout.activity_main)
 
         Fabric.with(this, Crashlytics())
+        progress.visibility = View.VISIBLE
 
         feature = Feature()
 //        feature.type = "LANDMARK_DETECTION"
@@ -95,6 +98,7 @@ class MainActivity : AppCompatActivity() {
     private fun addLanguagesToSpinner(languageList: List<com.google.cloud.translate.Language>) {
         val customAdapter = CustomAdapter(this, languageList)
         sp_language.adapter = customAdapter
+        progress.visibility = View.GONE
     }
 
     private fun openCameraIntent() {
@@ -128,6 +132,7 @@ class MainActivity : AppCompatActivity() {
 
     private fun processImage(bitmap: Bitmap, feature: Feature) {
 
+        progress.visibility = View.VISIBLE
         var featureList = ArrayList<Feature>();
         featureList.add(feature);
 
@@ -136,6 +141,7 @@ class MainActivity : AppCompatActivity() {
         annotateImageReq.setFeatures(featureList);
         annotateImageReq.setImage(getImageEncodeImage(bitmap));
         annotateImageRequests.add(annotateImageReq);
+
         doAsync {
             try {
 
@@ -158,8 +164,10 @@ class MainActivity : AppCompatActivity() {
 
                 convertResponseToString(response)
             } catch (e: GoogleJsonResponseException) {
+                progress.visibility = View.GONE
                 Log.d("MainActivity", "failed to make API request because " + e.getContent());
             } catch (e: IOException) {
+                progress.visibility = View.GONE
                 Log.d("MainActivity", "failed to make API request because of other IOException " + e.message);
             }
 //               return "Cloud Vision API request failed. Check logs for details.";
@@ -221,13 +229,17 @@ class MainActivity : AppCompatActivity() {
     fun formatAnnotation(entityAnnotation: List<EntityAnnotation>): String {
         var message = "";
         var translatedText = ""
+        val resultList: MutableList<ImageResult> = mutableListOf()
 
         if (entityAnnotation != null) {
+
             for (entity: EntityAnnotation in entityAnnotation) {
+                val imageResult = ImageResult()
                 message = message + "    " + entity.getDescription() + " " + entity.getScore();
                 message += "@";
-
-
+                imageResult.resultText = "" + entity.description
+                imageResult.resultValue = "" + entity.score
+                resultList.add(imageResult)
             }
 
             sp_language.onItemSelectedListener = object : AdapterView.OnItemSelectedListener {
@@ -236,6 +248,7 @@ class MainActivity : AppCompatActivity() {
                 }
 
                 override fun onItemSelected(parent: AdapterView<*>?, view: View?, position: Int, id: Long) {
+                    progress.visibility = View.VISIBLE
                     processTranslate(message);
                 }
 
@@ -247,11 +260,24 @@ class MainActivity : AppCompatActivity() {
 
         } else {
             message = "Nothing Found";
+            progress.visibility = View.GONE
         }
-        message = message.replace("@", "\n")
-        runOnUiThread(Runnable { tv_desc.text = message })
+//        message = message.replace("@", "\n")
+        runOnUiThread(Runnable {
+            // Creates a vertical Layout Manager
+            recyclerView.layoutManager = LinearLayoutManager(this)
+            recyclerView.isNestedScrollingEnabled = false;
 
+            // You can use GridLayoutManager if you want multiple columns. Enter the number of columns as a parameter.
+//        recyclerView.layoutManager = GridLayoutManager(this, 2)
 
+            // Access the RecyclerView Adapter and load the data into it
+            recyclerView.adapter = ResultAdapter(resultList, this)
+            recyclerView.adapter.notifyDataSetChanged()
+
+            progress.visibility = View.GONE
+            resultLL.visibility = View.VISIBLE
+        })
 
         return message;
     }
@@ -268,10 +294,12 @@ class MainActivity : AppCompatActivity() {
                             Translate.TranslateOption.sourceLanguage("en"),
                             Translate.TranslateOption.targetLanguage(language.code));
 
-
             var translatedText = translation.getTranslatedText();
             translatedText = translatedText.replace("@", "\n")
-            runOnUiThread(Runnable { tv_translated_text.text = translatedText })
+            runOnUiThread(Runnable {
+                tv_translated_text.text = translatedText
+                progress.visibility = View.GONE
+            })
         }
     }
 }
