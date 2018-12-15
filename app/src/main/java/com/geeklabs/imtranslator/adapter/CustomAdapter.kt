@@ -1,4 +1,4 @@
-package com.geeklabs.imtranslator
+package com.geeklabs.imtranslator.adapter
 
 import android.app.Activity
 import android.view.LayoutInflater
@@ -6,18 +6,14 @@ import android.view.View
 import android.view.ViewGroup
 import android.widget.BaseAdapter
 import android.widget.TextView
+import com.geeklabs.imtranslator.R
 import com.google.cloud.translate.Language
 
-public class CustomAdapter : BaseAdapter {
+class CustomAdapter(activity: Activity, var languages: List<Language>?) : BaseAdapter() {
 
+    private var activity: Activity? = activity
 
-    private var activity: Activity? = null
-    var languages: List<Language>? = null;
-
-    constructor(activity: Activity, languages: List<Language>?) {
-        this.activity = activity
-        this.languages = languages
-
+    init {
         notifyDataSetChanged()
     }
 
@@ -35,7 +31,7 @@ public class CustomAdapter : BaseAdapter {
             viewHolder = view.tag as ViewHolder
         }
 
-        var language = languages!![position]
+        val language = languages!![position]
         viewHolder.tvLanguageName?.text = language.name
         return view as View
     }
@@ -55,11 +51,11 @@ public class CustomAdapter : BaseAdapter {
         return languages!!.size
     }
 
-    class  ViewHolder(view: View) {
+    class ViewHolder(view: View) {
         var tvLanguageName: TextView? = null
 
         init {
-            this.tvLanguageName = view?.findViewById<TextView>(R.id.tv_language_name)
+            this.tvLanguageName = view.findViewById(R.id.tv_language_name)
         }
     }
 }

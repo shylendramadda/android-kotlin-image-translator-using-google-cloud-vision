@@ -3,33 +3,44 @@
     xmlns:tools="http://schemas.android.com/tools"
     package="com.geeklabs.imtranslator">
 
-    <uses-permission android:name="android.permission.CAMERA"/>
+    <uses-permission android:name="android.permission.CAMERA" />
     <uses-permission android:name="android.permission.WRITE_EXTERNAL_STORAGE" />
     <uses-permission android:name="android.permission.INTERNET" />
 
     <application
         android:allowBackup="true"
-        android:icon="@mipmap/ic_launcher"
+        android:icon="@drawable/image_translator_logo"
         android:label="@string/app_name"
-        android:roundIcon="@mipmap/ic_launcher_round"
+        android:largeHeap="true"
+        android:roundIcon="@drawable/image_translator_logo"
         android:supportsRtl="true"
-        tools:replace="android:theme"
-        android:theme="@style/AppTheme">
+        android:theme="@style/AppTheme"
+        tools:replace="android:theme">
 
-        <activity android:name=".MainActivity">
+        <activity
+            android:name=".SplashActivity"
+            android:configChanges="orientation|smallestScreenSize|screenSize"
+            android:theme="@style/Theme.AppCompat.NoActionBar">
             <intent-filter>
                 <action android:name="android.intent.action.MAIN" />
+                <action android:name="android.intent.action.VIEW" />
 
                 <category android:name="android.intent.category.LAUNCHER" />
             </intent-filter>
         </activity>
 
-        <activity android:name="com.desmond.squarecamera.CameraActivity"/>
+        <activity
+            android:name="com.desmond.squarecamera.CameraActivity"
+            android:configChanges="orientation|smallestScreenSize|screenSize" />
+
+        <activity
+            android:name=".MainActivity"
+            android:configChanges="orientation|smallestScreenSize|screenSize"
+            android:theme="@style/Theme.AppCompat.NoActionBar" />
 
         <meta-data
             android:name="io.fabric.ApiKey"
-            android:value="47e59cba4f9963d0c1102931bd992e7fb10cf269"
-            />
+            android:value="47e59cba4f9963d0c1102931bd992e7fb10cf269" />
     </application>
 
 </manifest>
