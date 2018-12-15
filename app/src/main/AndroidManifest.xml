@@ -9,6 +9,7 @@
 
     <application
         android:allowBackup="true"
+        android:fullBackupContent="false"
         android:icon="@drawable/image_translator_logo"
         android:label="@string/app_name"
         android:largeHeap="true"

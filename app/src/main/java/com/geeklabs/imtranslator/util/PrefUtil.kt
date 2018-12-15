@@ -14,7 +14,7 @@ class PrefUtil(context: Context) {
         get() = prefs.getString(LANGAUAGES, "")
         set(value) = prefs.edit().putString(LANGAUAGES, value).apply()
 
-    var selectedLanguage: String
+    var selectedLanguageCode: String
         get() = prefs.getString(SELECTED_LANGAUAGE, "")
         set(value) = prefs.edit().putString(SELECTED_LANGAUAGE, value).apply()
 

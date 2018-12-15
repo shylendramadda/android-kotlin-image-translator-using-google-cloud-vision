@@ -46,16 +46,16 @@ import java.util.*
 
 class MainActivity : AppCompatActivity() {
 
-    private val TAKE_PHOTO_REQUEST: Int = 560
-    private lateinit var feature: Feature
-    private val visionAPI = arrayOf("LANDMARK_DETECTION", "LOGO_DETECTION", "SAFE_SEARCH_DETECTION", "IMAGE_PROPERTIES", "LABEL_DETECTION")
-
+    private val TAG: String = "MainActivity"
+    private val TAKE_PHOTO_REQUEST: Int = 5
+    private var feature = Feature()
     private lateinit var prefUtil: PrefUtil
-    private val api = visionAPI[4]
-    //Text To Speech
     private lateinit var mTTS: TextToSpeech
     private lateinit var toSpeak: String
-    private lateinit var selectedLanguage: String
+    private lateinit var selectedLanguageCode: String
+    private lateinit var languages: String
+    private val visionAPI = arrayOf("LANDMARK_DETECTION", "LOGO_DETECTION", "SAFE_SEARCH_DETECTION", "IMAGE_PROPERTIES", "LABEL_DETECTION")
+    private val api = visionAPI[4]
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -65,12 +65,13 @@ class MainActivity : AppCompatActivity() {
             // to report crashes if any
             Fabric.with(this, Crashlytics())
             resultLL.visibility = View.GONE
-//        showProgress()
 
-            feature = Feature()
-//        feature.type = "LANDMARK_DETECTION"
-            feature.type = "LABEL_DETECTION"
-            feature.maxResults = 10
+            feature.type = api
+            feature.maxResults = 6
+
+            prefUtil = PrefUtil(this)
+            languages = prefUtil.lanagues
+            selectedLanguageCode = prefUtil.selectedLanguageCode
 
             mTTS = TextToSpeech(this, TextToSpeech.OnInitListener { status ->
                 if (status != TextToSpeech.ERROR) {
@@ -91,12 +92,7 @@ class MainActivity : AppCompatActivity() {
 
             }
 
-            // Instantiates a client
-            prefUtil = PrefUtil(this)
-            val languages = prefUtil.lanagues
-            selectedLanguage = prefUtil.selectedLanguage
-
-            if (languages.isEmpty()) {
+            if (languages.isEmpty()) { // if not found then fetch from server
 
                 doAsync {
                     val translate = TranslateOptions.newBuilder().setApiKey(getString(R.string.api_key)).build().getService();
@@ -111,6 +107,7 @@ class MainActivity : AppCompatActivity() {
                     prefUtil.lanagues = fromJson
 
                     uiThread {
+                        this@MainActivity.languages = fromJson
                         addLanguagesToSpinner(languages)
                     }
                 }
@@ -135,15 +132,20 @@ class MainActivity : AppCompatActivity() {
     }
 
     private fun addLanguagesToSpinner(languageList: List<com.google.cloud.translate.Language>) {
-        val customAdapter = CustomAdapter(this, languageList)
-        sp_language.adapter = customAdapter
+        try {
+            val customAdapter = CustomAdapter(this, languageList)
+            sp_language.adapter = customAdapter
 
-        if (!selectedLanguage.isEmpty()) {
-            val index = languageList.indexOfFirst { (it.name.equals(selectedLanguage)) }
-            sp_language.setSelection(index)
+            if (!selectedLanguageCode.isEmpty()) {
+                val index = languageList.indexOfFirst { (it.code == selectedLanguageCode) }
+                sp_language.setSelection(index)
+            }
+
+            hideProgress()
+        } catch (ex: Exception) {
+            hideProgress()
+            ex.printStackTrace()
         }
-
-        hideProgress()
     }
 
     private fun openCameraIntent() {
@@ -211,10 +213,10 @@ class MainActivity : AppCompatActivity() {
                     convertResponseToString(response)
                 } catch (e: GoogleJsonResponseException) {
                     hideProgress()
-                    Log.d("MainActivity", "failed to make API request because " + e.getContent());
+                    Log.d(TAG, "failed to make API request because " + e.getContent());
                 } catch (e: IOException) {
                     hideProgress()
-                    Log.d("MainActivity", "failed to make API request because of other IOException " + e.message);
+                    Log.d(TAG, "failed to make API request because of other IOException " + e.message);
                 }
 //               return "Cloud Vision API request failed. Check logs for details.";
             }
@@ -334,9 +336,14 @@ class MainActivity : AppCompatActivity() {
     private fun processTranslate(message: String) {
         try {
             toSpeak = message
-            speaker.visibility = View.VISIBLE
-            val selectedItem = sp_language.selectedItem
-            prefUtil.selectedLanguage = selectedItem.toString()
+            if (!toSpeak.isEmpty())
+                speaker.visibility = View.VISIBLE
+
+            val selectedItem = sp_language.selectedItem as Language
+            val gson = Gson()
+            val languageList = gson.fromJson(languages, Array<com.google.cloud.translate.Language>::class.java).asList()
+            val language1 = languageList.first { it.code == selectedItem.code }
+            prefUtil.selectedLanguageCode = language1.code
 
             doAsync {
                 val language = selectedItem as Language

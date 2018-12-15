@@ -72,7 +72,7 @@
                 <Spinner
                     android:id="@+id/sp_language"
                     android:layout_width="match_parent"
-                    android:layout_height="60dp"
+                    android:layout_height="wrap_content"
                     android:layout_margin="10dp"
                     android:entries="@array/languages" />
 
@@ -87,16 +87,33 @@
                     android:textColor="@android:color/white"
                     android:textStyle="bold" />
 
-                <ImageView
-                    android:id="@+id/speaker"
-                    android:layout_width="20dp"
-                    android:layout_height="20dp"
-                    android:layout_gravity="end"
-                    android:layout_marginEnd="20dp"
-                    android:layout_marginRight="20dp"
-                    android:contentDescription="@string/app_name"
-                    android:src="@drawable/speaker"
-                    android:visibility="gone" />
+                <RelativeLayout
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:orientation="horizontal">
+
+                    <TextView
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:layout_marginEnd="20dp"
+                        android:layout_marginRight="20dp"
+                        android:layout_toLeftOf="@+id/speaker"
+                        android:layout_toStartOf="@+id/speaker"
+                        android:text="@string/speak_out"
+                        android:textColor="@android:color/black" />
+
+                    <ImageView
+                        android:id="@+id/speaker"
+                        android:layout_width="20dp"
+                        android:layout_height="20dp"
+                        android:layout_alignParentEnd="true"
+                        android:layout_alignParentRight="true"
+                        android:layout_marginEnd="20dp"
+                        android:layout_marginRight="20dp"
+                        android:contentDescription="@string/app_name"
+                        android:src="@drawable/speaker"
+                        android:visibility="gone" />
+                </RelativeLayout>
 
                 <TextView
                     android:id="@+id/tv_translated_text"

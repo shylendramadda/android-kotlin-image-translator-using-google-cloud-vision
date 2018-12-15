@@ -16,8 +16,8 @@ class ResultAdapter(val items : List<ImageResult>, val context: Context) : Recyc
     }
 
     override fun onBindViewHolder(holder: ViewHolder, position: Int) {
-        holder.tv_desc.text = items.get(position).resultText
-        holder.circleView?.setProgress(items.get(position).resultValue.toDouble(), 1.0)
+        holder.tv_desc.text = items[position].resultText
+        holder.circleView?.setProgress(items[position].resultValue.toDouble(), 1.0)
         holder.circleView.setProgressTextAdapter(PatternProgressTextAdapter("%.2f"));
     }
 
