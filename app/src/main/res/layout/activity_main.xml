@@ -19,6 +19,15 @@
             android:layout_height="match_parent"
             android:orientation="vertical">
 
+            <TextView
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:gravity="center"
+                android:padding="10dp"
+                android:text="@string/app_name"
+                android:textColor="@android:color/black"
+                android:textSize="22sp" />
+
             <ImageView
                 android:id="@+id/iv_photo"
                 android:layout_width="150dp"
@@ -56,7 +65,8 @@
                     android:id="@+id/spinner_language"
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
-                    android:layout_margin="10dp"
+                    android:layout_marginEnd="10dp"
+                    android:layout_marginStart="10dp"
                     android:entries="@array/languages"
                     android:theme="@style/ThemeOverlay.AppCompat.Light" />
 

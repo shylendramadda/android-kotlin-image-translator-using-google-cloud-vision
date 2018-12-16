@@ -14,10 +14,12 @@ import android.support.annotation.NonNull
 import android.support.v4.app.ActivityCompat
 import android.support.v4.content.ContextCompat
 import android.support.v7.app.AppCompatActivity
+import android.support.v7.widget.DividerItemDecoration
 import android.support.v7.widget.LinearLayoutManager
 import android.util.Log
 import android.view.View
 import android.widget.AdapterView
+import android.widget.LinearLayout.HORIZONTAL
 import android.widget.Toast
 import com.bumptech.glide.Glide
 import com.crashlytics.android.Crashlytics
@@ -350,6 +352,7 @@ class MainActivity : AppCompatActivity() {
             runOnUiThread {
                 // Creates a vertical Layout Manager
                 recyclerView.layoutManager = LinearLayoutManager(this)
+                recyclerView.addItemDecoration(DividerItemDecoration(this, HORIZONTAL))
                 recyclerView.setHasFixedSize(true);
                 recyclerView.isNestedScrollingEnabled = false;
 
