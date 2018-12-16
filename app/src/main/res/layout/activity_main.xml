@@ -25,7 +25,8 @@
                 android:layout_height="150dp"
                 android:layout_gravity="center"
                 android:layout_margin="10dp"
-                android:background="@drawable/camera" />
+                android:background="@drawable/camera"
+                android:contentDescription="@string/app_name" />
 
             <TextView
                 android:layout_width="match_parent"
@@ -45,6 +46,24 @@
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
                     android:layout_margin="10dp"
+                    android:background="@drawable/bg_text"
+                    android:padding="10dp"
+                    android:text="@string/select_language_to_convert"
+                    android:textColor="@android:color/white"
+                    android:textStyle="bold" />
+
+                <Spinner
+                    android:id="@+id/spinner_language"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:layout_margin="10dp"
+                    android:entries="@array/languages"
+                    android:theme="@style/ThemeOverlay.AppCompat.Light" />
+
+                <TextView
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:layout_margin="10dp"
                     android:layout_marginTop="10dp"
                     android:background="@drawable/bg_text"
                     android:padding="10dp"
@@ -57,74 +76,8 @@
                     android:id="@+id/recyclerView"
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
-                    android:layout_margin="10dp" />
-
-                <TextView
-                    android:layout_width="match_parent"
-                    android:layout_height="wrap_content"
-                    android:layout_margin="10dp"
-                    android:background="@drawable/bg_text"
-                    android:padding="10dp"
-                    android:text="@string/select_language_to_convert"
-                    android:textColor="@android:color/white"
-                    android:textStyle="bold" />
-
-                <Spinner
-                    android:id="@+id/sp_language"
-                    android:layout_width="match_parent"
-                    android:layout_height="wrap_content"
-                    android:layout_margin="10dp"
-                    android:entries="@array/languages" />
-
-                <TextView
-                    android:layout_width="match_parent"
-                    android:layout_height="wrap_content"
-                    android:layout_margin="10dp"
-                    android:background="@drawable/bg_text"
-                    android:padding="10dp"
-                    android:text="@string/lbl_trans_text"
-                    android:textAppearance="@style/TextAppearance.AppCompat.Body1"
-                    android:textColor="@android:color/white"
-                    android:textStyle="bold" />
-
-                <RelativeLayout
-                    android:layout_width="wrap_content"
-                    android:layout_height="wrap_content"
-                    android:orientation="horizontal">
-
-                    <TextView
-                        android:layout_width="wrap_content"
-                        android:layout_height="wrap_content"
-                        android:layout_marginEnd="20dp"
-                        android:layout_marginRight="20dp"
-                        android:layout_toLeftOf="@+id/speaker"
-                        android:layout_toStartOf="@+id/speaker"
-                        android:text="@string/speak_out"
-                        android:textColor="@android:color/black" />
-
-                    <ImageView
-                        android:id="@+id/speaker"
-                        android:layout_width="20dp"
-                        android:layout_height="20dp"
-                        android:layout_alignParentEnd="true"
-                        android:layout_alignParentRight="true"
-                        android:layout_marginEnd="20dp"
-                        android:layout_marginRight="20dp"
-                        android:contentDescription="@string/app_name"
-                        android:src="@drawable/speaker"
-                        android:visibility="gone" />
-                </RelativeLayout>
-
-                <TextView
-                    android:id="@+id/tv_translated_text"
-                    android:layout_width="match_parent"
-                    android:layout_height="wrap_content"
-                    android:layout_margin="10dp"
-                    android:padding="10dp"
-                    android:text=""
-                    android:textAppearance="@style/TextAppearance.AppCompat.Body1"
-                    android:textColor="@android:color/black"
-                    android:textSize="14sp" />
+                    android:layout_marginEnd="10dp"
+                    android:layout_marginStart="10dp" />
 
             </LinearLayout>
 

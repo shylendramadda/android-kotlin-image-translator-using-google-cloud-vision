@@ -1,5 +1,5 @@
 package com.geeklabs.imtranslator.model
 
-data class ImageResult(var resultText: String, var resultValue: String)
+data class ImageResult(var resultText: String, var resultValue: String, var translatedText: String)
 
 

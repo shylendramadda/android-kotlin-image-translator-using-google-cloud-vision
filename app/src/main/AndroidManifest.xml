@@ -32,7 +32,8 @@
 
         <activity
             android:name="com.desmond.squarecamera.CameraActivity"
-            android:configChanges="orientation|smallestScreenSize|screenSize" />
+            android:configChanges="orientation|smallestScreenSize|screenSize"
+            android:screenOrientation="portrait" />
 
         <activity
             android:name=".MainActivity"

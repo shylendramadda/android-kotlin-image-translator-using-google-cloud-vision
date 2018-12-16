@@ -18,6 +18,7 @@ import android.support.v7.widget.LinearLayoutManager
 import android.util.Log
 import android.view.View
 import android.widget.AdapterView
+import android.widget.Toast
 import com.bumptech.glide.Glide
 import com.crashlytics.android.Crashlytics
 import com.desmond.squarecamera.CameraActivity
@@ -47,15 +48,19 @@ import java.util.*
 class MainActivity : AppCompatActivity() {
 
     private val TAG: String = "MainActivity"
-    private val TAKE_PHOTO_REQUEST: Int = 5
+    private val TAKE_PHOTO_REQUEST = 5
+    private val PERMISSION_CAMERA = 1
     private var feature = Feature()
     private lateinit var prefUtil: PrefUtil
     private lateinit var mTTS: TextToSpeech
-    private lateinit var toSpeak: String
     private lateinit var selectedLanguageCode: String
     private lateinit var languages: String
+    private lateinit var languageList: List<com.google.cloud.translate.Language>
+    private var resultList: MutableList<ImageResult> = mutableListOf()
     private val visionAPI = arrayOf("LANDMARK_DETECTION", "LOGO_DETECTION", "SAFE_SEARCH_DETECTION", "IMAGE_PROPERTIES", "LABEL_DETECTION")
     private val api = visionAPI[4]
+    private lateinit var selectedItem: Language
+    private var photoUri: Uri? = null
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -84,14 +89,6 @@ class MainActivity : AppCompatActivity() {
                 openCameraIntent()
             }
 
-            speaker.setOnClickListener {
-                if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.LOLLIPOP)
-                    mTTS.speak(toSpeak, TextToSpeech.QUEUE_FLUSH, null, null);
-                else
-                    mTTS.speak(toSpeak, TextToSpeech.QUEUE_FLUSH, null);
-
-            }
-
             if (languages.isEmpty()) { // if not found then fetch from server
 
                 doAsync {
@@ -107,7 +104,6 @@ class MainActivity : AppCompatActivity() {
                     prefUtil.lanagues = fromJson
 
                     uiThread {
-                        this@MainActivity.languages = fromJson
                         addLanguagesToSpinner(languages)
                     }
                 }
@@ -118,32 +114,42 @@ class MainActivity : AppCompatActivity() {
             }
         } catch (e: Exception) {
             e.printStackTrace()
+            showErrorMessage()
         }
     }
 
+    private fun showErrorMessage() {
+        Toast.makeText(this, "Something went wrong please try again.", Toast.LENGTH_LONG).show()
+    }
+
     private fun showProgress() {
-        if (!progress.isShown)
+        if (progress.visibility != View.VISIBLE)
             progress.visibility = View.VISIBLE
     }
 
     private fun hideProgress() {
-        if (progress.isShown)
+        if (progress.visibility == View.VISIBLE)
             progress.visibility = View.GONE
     }
 
     private fun addLanguagesToSpinner(languageList: List<com.google.cloud.translate.Language>) {
         try {
             val customAdapter = CustomAdapter(this, languageList)
-            sp_language.adapter = customAdapter
+            spinner_language.adapter = customAdapter
+            this.languageList = languageList
 
             if (!selectedLanguageCode.isEmpty()) {
                 val index = languageList.indexOfFirst { (it.code == selectedLanguageCode) }
-                sp_language.setSelection(index)
+                spinner_language.setSelection(index)
+            } else {
+                val index = languageList.indexOfFirst { (it.code == "en") }
+                spinner_language.setSelection(index)
             }
 
             hideProgress()
         } catch (ex: Exception) {
             hideProgress()
+            showErrorMessage()
             ex.printStackTrace()
         }
     }
@@ -153,7 +159,6 @@ class MainActivity : AppCompatActivity() {
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) {
             val checkSelfPermission = ContextCompat.checkSelfPermission(this, Manifest.permission.CAMERA)
             if (checkSelfPermission != PackageManager.PERMISSION_GRANTED) {
-                val PERMISSION_CAMERA = 0
                 ActivityCompat.requestPermissions(this, arrayOf(Manifest.permission.CAMERA), PERMISSION_CAMERA)
             } else {
                 // Start CameraActivity
@@ -163,15 +168,32 @@ class MainActivity : AppCompatActivity() {
         }
     }
 
+    override fun onRequestPermissionsResult(requestCode: Int, permissions: Array<out String>, grantResults: IntArray) {
+        super.onRequestPermissionsResult(requestCode, permissions, grantResults)
+
+        when (requestCode) {
+            PERMISSION_CAMERA -> {
+                if (grantResults.isEmpty() || grantResults[0] != PackageManager.PERMISSION_GRANTED) {
+                    Log.i(TAG, "Permission has been denied by user")
+                    finish()
+                } else {
+                    Log.i(TAG, "Permission has been granted by user")
+                    openCameraIntent()
+                }
+            }
+
+        }
+    }
+
     override fun onActivityResult(requestCode: Int, resultCode: Int, data: Intent?) {
         super.onActivityResult(requestCode, resultCode, data)
         if (resultCode == Activity.RESULT_OK && TAKE_PHOTO_REQUEST == requestCode) {
-            val photoUri = data!!.getData()
-            Log.i("URL", photoUri.path)
+            photoUri = data!!.data
+            Log.i("URL", photoUri?.path)
             Glide.with(this).load(photoUri).into(iv_photo)
 
             //getDataFromImage(photoUri.path)
-            val bitmap = MediaStore.Images.Media.getBitmap(this.contentResolver, Uri.fromFile(File(photoUri.path)));
+            val bitmap = MediaStore.Images.Media.getBitmap(this.contentResolver, Uri.fromFile(File(photoUri?.path)));
             processImage(bitmap, feature)
         }
     }
@@ -186,8 +208,8 @@ class MainActivity : AppCompatActivity() {
 
             val annotateImageRequests = ArrayList<AnnotateImageRequest>();
             val annotateImageReq = AnnotateImageRequest();
-            annotateImageReq.setFeatures(featureList);
-            annotateImageReq.setImage(getImageEncodeImage(bitmap));
+            annotateImageReq.features = featureList;
+            annotateImageReq.image = this.getImageEncodeImage(bitmap);
             annotateImageRequests.add(annotateImageReq);
 
             doAsync {
@@ -204,24 +226,36 @@ class MainActivity : AppCompatActivity() {
                     val vision = builder.build();
 
                     val batchAnnotateImagesRequest = BatchAnnotateImagesRequest();
-                    batchAnnotateImagesRequest.setRequests(annotateImageRequests);
+                    batchAnnotateImagesRequest.requests = annotateImageRequests;
 
                     val annotateRequest = vision.images().annotate(batchAnnotateImagesRequest);
-                    annotateRequest.setDisableGZipContent(true);
+                    annotateRequest.disableGZipContent = true;
                     val response = annotateRequest.execute();
 
                     convertResponseToString(response)
+
+                    // Delete image from file storage
+                    if (photoUri != null) {
+                        val file = File(photoUri?.path)
+                        if (file.exists()) {
+                            file.delete()
+                        }
+                    }
+
                 } catch (e: GoogleJsonResponseException) {
                     hideProgress()
+                    showErrorMessage()
                     Log.d(TAG, "failed to make API request because " + e.getContent());
                 } catch (e: IOException) {
                     hideProgress()
+                    showErrorMessage()
                     Log.d(TAG, "failed to make API request because of other IOException " + e.message);
                 }
-//               return "Cloud Vision API request failed. Check logs for details.";
+
             }
         } catch (e: Exception) {
             e.printStackTrace()
+            showErrorMessage()
             hideProgress()
         }
     }
@@ -229,26 +263,30 @@ class MainActivity : AppCompatActivity() {
     @NonNull
     fun getImageEncodeImage(bitmap: Bitmap): Image {
         val base64EncodedImage = Image()
-        // Convert the bitmap to a JPEG
-        // Just in case it's a format that Android understands but Cloud Vision
-        val byteArrayOutputStream = ByteArrayOutputStream();
-        bitmap.compress(Bitmap.CompressFormat.JPEG, 90, byteArrayOutputStream);
-        val imageBytes = byteArrayOutputStream.toByteArray();
+        try {
+            // Convert the bitmap to a JPEG
+            // Just in case it's a format that Android understands but Cloud Vision
+            val byteArrayOutputStream = ByteArrayOutputStream();
+            bitmap.compress(Bitmap.CompressFormat.JPEG, 90, byteArrayOutputStream);
+            val imageBytes = byteArrayOutputStream.toByteArray();
 
-        // Base64 encode the JPEG
-        base64EncodedImage.encodeContent(imageBytes);
+            // Base64 encode the JPEG
+            base64EncodedImage.encodeContent(imageBytes)
+        } catch (ex: java.lang.Exception) {
+            ex.printStackTrace()
+            showErrorMessage()
+            hideProgress()
+        }
         return base64EncodedImage;
     }
 
 
-    private fun convertResponseToString(response: BatchAnnotateImagesResponse): String {
+    private fun convertResponseToString(response: BatchAnnotateImagesResponse) {
 
-        val imageResponses = response.getResponses().get(0);
-        var message = "";
+        val imageResponses = response.responses[0];
 
-        if (api.equals("LABEL_DETECTION")) {
-            message = formatAnnotation(imageResponses.getLabelAnnotations());
-            return message;
+        if (api == "LABEL_DETECTION") {
+            formatAnnotation(imageResponses.labelAnnotations);
         }
         /*switch (api) {
             case "LANDMARK_DETECTION":
@@ -272,43 +310,43 @@ class MainActivity : AppCompatActivity() {
                 message = formatAnnotation(entityAnnotations);
                 break;
         }*/
-        return message;
     }
 
-    private fun formatAnnotation(entityAnnotation: List<EntityAnnotation>): String {
+    private fun formatAnnotation(entityAnnotation: List<EntityAnnotation>) {
         try {
-            var message = "";
-            val resultList: MutableList<ImageResult> = mutableListOf()
+            var imageTextResults = ""
 
             if (!entityAnnotation.isEmpty()) {
 
                 for (entity: EntityAnnotation in entityAnnotation) {
-                    message = message + "    " + entity.description + " " + entity.score;
-                    message += "@";
-                    val imageResult = ImageResult("" + entity.description, "" + entity.score)
+                    imageTextResults += entity.description.toString() + "@"
+                    val imageResult = ImageResult(entity.description.toString(), entity.score.toString(), "")
                     resultList.add(imageResult)
                 }
 
-                sp_language.onItemSelectedListener = object : AdapterView.OnItemSelectedListener {
+                spinner_language.onItemSelectedListener = object : AdapterView.OnItemSelectedListener {
                     override fun onNothingSelected(parent: AdapterView<*>?) {
 
                     }
 
                     override fun onItemSelected(parent: AdapterView<*>?, view: View?, position: Int, id: Long) {
                         showProgress()
-                        processTranslate(message);
+                        processTranslate(imageTextResults);
                     }
 
                 }
 
-                // Translates some text into Russian
-                processTranslate(message);
+                selectedItem = spinner_language.selectedItem as Language
 
+                if (selectedItem.code != "en") {
+                    // Translates text into selected language
+                    processTranslate(imageTextResults);
+                }
             } else {
-                message = "Nothing Found";
+                imageTextResults = "Nothing Found";
                 hideProgress()
             }
-//        message = message.replace("@", "\n")
+
             runOnUiThread {
                 // Creates a vertical Layout Manager
                 recyclerView.layoutManager = LinearLayoutManager(this)
@@ -319,59 +357,78 @@ class MainActivity : AppCompatActivity() {
 //        recyclerView.layoutManager = GridLayoutManager(this, 2)
 
                 // Access the RecyclerView Adapter and load the data into it
-                recyclerView.adapter = ResultAdapter(resultList, this)
-                recyclerView.adapter.notifyDataSetChanged()
+                val resultAdapter = ResultAdapter(resultList, this, mTTS)
+                recyclerView.adapter = resultAdapter
+                resultAdapter.notifyDataSetChanged()
 
-                hideProgress()
                 resultLL.visibility = View.VISIBLE
+                hideProgress()
             }
-            return message
         } catch (e: Exception) {
             e.printStackTrace()
+            showErrorMessage()
             hideProgress()
         }
-        return ""
     }
 
-    private fun processTranslate(message: String) {
-        try {
-            toSpeak = message
-            if (!toSpeak.isEmpty())
-                speaker.visibility = View.VISIBLE
+    private lateinit var splits: List<String>
 
-            val selectedItem = sp_language.selectedItem as Language
-            val gson = Gson()
-            val languageList = gson.fromJson(languages, Array<com.google.cloud.translate.Language>::class.java).asList()
-            val language1 = languageList.first { it.code == selectedItem.code }
-            prefUtil.selectedLanguageCode = language1.code
+    private fun processTranslate(imageTextResult: String) {
+        try {
+            selectedItem = spinner_language.selectedItem as Language
+            if (selectedItem.code == "en") {
+                hideProgress()
+//                Toast.makeText(this, "Please choose other language", Toast.LENGTH_LONG).show()
+                return
+            }
+
+            // save selected language code in local
+            val language = this.languageList.first { it.code == selectedItem.code }
+            prefUtil.selectedLanguageCode = language.code
 
             doAsync {
-                val language = selectedItem as Language
-                val translate = TranslateOptions.newBuilder().setApiKey(getString(R.string.api_key)).build().service;
+                val translate = TranslateOptions.newBuilder().setApiKey(getString(R.string.api_key))
+                        .build().service;
                 val translation =
                         translate.translate(
-                                message,
+                                imageTextResult,
                                 Translate.TranslateOption.sourceLanguage("en"),
-                                Translate.TranslateOption.targetLanguage(language.code));
+                                Translate.TranslateOption.targetLanguage(selectedItem.code))
 
-                var translatedText = translation.translatedText;
-                translatedText = translatedText.replace("@", "\n")
+                val translatedText = translation.translatedText;
+
                 uiThread {
-                    tv_translated_text.text = translatedText
                     hideProgress()
+
+                    if (translatedText.contains("@"))
+                        splits = translatedText.split("@")
+
+                    if (!splits.isEmpty()) {
+
+                        for (i in 0 until splits.size - 1) {
+                            resultList[i].translatedText = splits[i]
+                        }
+
+                        val resultAdapter = ResultAdapter(resultList, this@MainActivity, mTTS)
+                        recyclerView.adapter = resultAdapter
+                        resultAdapter.notifyDataSetChanged()
+
+                    }
+
                 }
+
+
             }
         } catch (e: Exception) {
             hideProgress()
+            showErrorMessage()
             e.printStackTrace()
         }
     }
 
     override fun onPause() {
-        if (mTTS.isSpeaking) {
-            //if speaking then stop
+        if (mTTS.isSpeaking)
             mTTS.stop()
-        }
         super.onPause()
     }
 
