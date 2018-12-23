@@ -19,27 +19,40 @@ class ResultAdapter(private val items: List<ImageResult>, private val context: C
 
     override fun onBindViewHolder(holder: ViewHolder, position: Int) {
 
-        holder.tv_desc.text = items[position].resultText
-        holder.tv_translated_text.text = items[position].translatedText
-        holder.circleView?.setProgress(items[position].resultValue.toDouble(), 1.0)
-        val progressTextAdapter = PatternProgressTextAdapter("%.2f")
-        holder.circleView.setProgressTextAdapter(progressTextAdapter)
+        try {
 
-        holder.speaker.setOnClickListener {
-            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.LOLLIPOP)
-                mTTS.speak(holder.tv_desc.text.toString(), TextToSpeech.QUEUE_FLUSH, null, null);
-            else
-                mTTS.speak(holder.tv_desc.text.toString(), TextToSpeech.QUEUE_FLUSH, null);
+            val resultText = items[position].resultText
+            val translatedText = items[position].translatedText
+            val languageCode = items[position].resultValue
+
+
+            holder.tv_desc.text = resultText
+            holder.tv_translated_text.text = translatedText
+            holder.circleView?.setProgress(languageCode.toDouble() * 100, 100.0)
+            val progressTextAdapter = PatternProgressTextAdapter("%.1f")
+            holder.circleView.setProgressTextAdapter(progressTextAdapter)
+
+            holder.speaker.setOnClickListener {
+                if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.LOLLIPOP) {
+//                    if (!translatedText.isEmpty())
+//                        mTTS.speak(translatedText, TextToSpeech.QUEUE_FLUSH, null, null)
+//                    else
+                        mTTS.speak(resultText, TextToSpeech.QUEUE_FLUSH, null, null)
+                } else {
+//                    if (!translatedText.isEmpty())
+//                        mTTS.speak(translatedText, TextToSpeech.QUEUE_FLUSH, null)
+//                    else
+                        mTTS.speak(resultText, TextToSpeech.QUEUE_FLUSH, null)
+                }
+            }
+        } catch (ex: Exception) {
+            ex.printStackTrace()
         }
     }
 
     // Gets the number of animals in the list
     override fun getItemCount(): Int {
         return items.size
-    }
-
-    fun notifyData(translatedResultList: MutableList<String>) {
-
     }
 
 }

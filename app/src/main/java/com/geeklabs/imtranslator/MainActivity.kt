@@ -20,6 +20,7 @@ import android.util.Log
 import android.view.View
 import android.widget.AdapterView
 import android.widget.LinearLayout.HORIZONTAL
+import android.widget.LinearLayout.VERTICAL
 import android.widget.Toast
 import com.bumptech.glide.Glide
 import com.crashlytics.android.Crashlytics
@@ -74,7 +75,7 @@ class MainActivity : AppCompatActivity() {
             resultLL.visibility = View.GONE
 
             feature.type = api
-            feature.maxResults = 6
+            feature.maxResults = 10
 
             prefUtil = PrefUtil(this)
             languages = prefUtil.lanagues
@@ -191,12 +192,17 @@ class MainActivity : AppCompatActivity() {
         super.onActivityResult(requestCode, resultCode, data)
         if (resultCode == Activity.RESULT_OK && TAKE_PHOTO_REQUEST == requestCode) {
             photoUri = data!!.data
-            Log.i("URL", photoUri?.path)
-            Glide.with(this).load(photoUri).into(iv_photo)
+            if (photoUri != null) {
+                resultList.clear() // remove previous results from list
+                Log.i("URL", photoUri?.path)
+                Glide.with(this).load(photoUri).into(iv_photo)
 
-            //getDataFromImage(photoUri.path)
-            val bitmap = MediaStore.Images.Media.getBitmap(this.contentResolver, Uri.fromFile(File(photoUri?.path)));
-            processImage(bitmap, feature)
+                //getDataFromImage(photoUri.path)
+                val bitmap = MediaStore.Images.Media.getBitmap(this.contentResolver, Uri.fromFile(File(photoUri?.path)));
+                processImage(bitmap, feature)
+            } else {
+                Toast.makeText(this, "Unable to get file path", Toast.LENGTH_LONG).show()
+            }
         }
     }
 
@@ -352,9 +358,8 @@ class MainActivity : AppCompatActivity() {
             runOnUiThread {
                 // Creates a vertical Layout Manager
                 recyclerView.layoutManager = LinearLayoutManager(this)
-                recyclerView.addItemDecoration(DividerItemDecoration(this, HORIZONTAL))
-                recyclerView.setHasFixedSize(true);
-                recyclerView.isNestedScrollingEnabled = false;
+                recyclerView.setHasFixedSize(true)
+                recyclerView.isNestedScrollingEnabled = false
 
                 // You can use GridLayoutManager if you want multiple columns. Enter the number of columns as a parameter.
 //        recyclerView.layoutManager = GridLayoutManager(this, 2)
@@ -417,10 +422,7 @@ class MainActivity : AppCompatActivity() {
                         resultAdapter.notifyDataSetChanged()
 
                     }
-
                 }
-
-
             }
         } catch (e: Exception) {
             hideProgress()

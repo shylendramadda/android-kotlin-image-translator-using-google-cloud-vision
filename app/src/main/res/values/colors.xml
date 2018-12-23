@@ -5,4 +5,5 @@
     <color name="colorAccent">#FF4081</color>
     <color name="colorPrimaryLight">#cad0f4</color>
     <color name="textBg">#39500c</color>
+    <color name="colorProgress">#89e77c</color>
 </resources>

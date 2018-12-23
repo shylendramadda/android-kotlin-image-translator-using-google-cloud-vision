@@ -4,8 +4,9 @@
     <string name="lbl_trans_text">Translated Result:</string>
     <string name="fabric_key">47e59cba4f9963d0c1102931bd992e7fb10cf269</string>
     <string name="api_key">AIzaSyCH0OkZs2XeMt3TPaHp-BgIqiUBzWe1w8w</string>
-    <string name="result">Result:</string>
+    <string name="result">Expected result:</string>
     <string name="click_here_to_take_snap">Click here to take snap</string>
-    <string name="select_language_to_convert">Select Language to convert:</string>
+    <string name="select_language_to_convert">Select language to convert:</string>
     <string name="speak_out">Speak out</string>
+    <string name="select_language">Select Language</string>
 </resources>

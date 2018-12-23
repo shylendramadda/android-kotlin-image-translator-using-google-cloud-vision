@@ -65,10 +65,19 @@
                     android:id="@+id/spinner_language"
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
-                    android:layout_marginEnd="10dp"
                     android:layout_marginStart="10dp"
+                    android:layout_marginEnd="10dp"
                     android:entries="@array/languages"
                     android:theme="@style/ThemeOverlay.AppCompat.Light" />
+
+                <AutoCompleteTextView
+                    android:id="@+id/autoCompleteTV"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:layout_marginStart="10dp"
+                    android:layout_marginEnd="10dp"
+                    android:hint="@string/select_language"
+                    android:visibility="gone" />
 
                 <TextView
                     android:layout_width="match_parent"
@@ -86,8 +95,8 @@
                     android:id="@+id/recyclerView"
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
-                    android:layout_marginEnd="10dp"
-                    android:layout_marginStart="10dp" />
+                    android:layout_marginStart="10dp"
+                    android:layout_marginEnd="10dp" />
 
             </LinearLayout>
 
