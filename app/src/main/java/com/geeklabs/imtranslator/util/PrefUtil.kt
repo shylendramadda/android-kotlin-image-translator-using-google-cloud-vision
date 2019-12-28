@@ -11,11 +11,11 @@ class PrefUtil(context: Context) {
     private val prefs: SharedPreferences = context.getSharedPreferences(PREFS_FILENAME, 0);
 
     var lanagues: String
-        get() = prefs.getString(LANGAUAGES, "")
+        get() = prefs.getString(LANGAUAGES, "") ?: ""
         set(value) = prefs.edit().putString(LANGAUAGES, value).apply()
 
     var selectedLanguageCode: String
-        get() = prefs.getString(SELECTED_LANGAUAGE, "")
+        get() = prefs.getString(SELECTED_LANGAUAGE, "") ?: ""
         set(value) = prefs.edit().putString(SELECTED_LANGAUAGE, value).apply()
 
 }

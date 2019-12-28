@@ -1,30 +1,29 @@
 package com.geeklabs.imtranslator.adapter
 
 import android.content.Context
-import android.os.Build
 import android.speech.tts.TextToSpeech
-import android.support.v7.widget.RecyclerView
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
+import androidx.recyclerview.widget.RecyclerView
 import antonkozyriatskyi.circularprogressindicator.PatternProgressTextAdapter
 import com.geeklabs.imtranslator.R
 import com.geeklabs.imtranslator.model.ImageResult
 import kotlinx.android.synthetic.main.result_custom_row.view.*
 
-class ResultAdapter(private val items: List<ImageResult>, private val context: Context, private val mTTS: TextToSpeech) : RecyclerView.Adapter<ViewHolder>() {
+class ResultAdapter(private val items: List<ImageResult>,
+                    private val context: Context, private val mTTS: TextToSpeech)
+    : RecyclerView.Adapter<ViewHolder>() {
+
     override fun onCreateViewHolder(parent: ViewGroup, viewType: Int): ViewHolder {
         return ViewHolder(LayoutInflater.from(context).inflate(R.layout.result_custom_row, parent, false))
     }
 
     override fun onBindViewHolder(holder: ViewHolder, position: Int) {
-
         try {
-
             val resultText = items[position].resultText
             val translatedText = items[position].translatedText
             val languageCode = items[position].resultValue
-
 
             holder.tv_desc.text = resultText
             holder.tv_translated_text.text = translatedText
@@ -33,17 +32,7 @@ class ResultAdapter(private val items: List<ImageResult>, private val context: C
             holder.circleView.setProgressTextAdapter(progressTextAdapter)
 
             holder.speaker.setOnClickListener {
-                if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.LOLLIPOP) {
-//                    if (!translatedText.isEmpty())
-//                        mTTS.speak(translatedText, TextToSpeech.QUEUE_FLUSH, null, null)
-//                    else
-                        mTTS.speak(resultText, TextToSpeech.QUEUE_FLUSH, null, null)
-                } else {
-//                    if (!translatedText.isEmpty())
-//                        mTTS.speak(translatedText, TextToSpeech.QUEUE_FLUSH, null)
-//                    else
-                        mTTS.speak(resultText, TextToSpeech.QUEUE_FLUSH, null)
-                }
+                mTTS.speak(resultText, TextToSpeech.QUEUE_FLUSH, null, null)
             }
         } catch (ex: Exception) {
             ex.printStackTrace()

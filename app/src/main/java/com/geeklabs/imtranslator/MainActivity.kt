@@ -10,18 +10,15 @@ import android.os.Build
 import android.os.Bundle
 import android.provider.MediaStore
 import android.speech.tts.TextToSpeech
-import android.support.annotation.NonNull
-import android.support.v4.app.ActivityCompat
-import android.support.v4.content.ContextCompat
-import android.support.v7.app.AppCompatActivity
-import android.support.v7.widget.DividerItemDecoration
-import android.support.v7.widget.LinearLayoutManager
 import android.util.Log
 import android.view.View
 import android.widget.AdapterView
-import android.widget.LinearLayout.HORIZONTAL
-import android.widget.LinearLayout.VERTICAL
 import android.widget.Toast
+import androidx.annotation.NonNull
+import androidx.appcompat.app.AppCompatActivity
+import androidx.core.app.ActivityCompat
+import androidx.core.content.ContextCompat
+import androidx.recyclerview.widget.LinearLayoutManager
 import com.bumptech.glide.Glide
 import com.crashlytics.android.Crashlytics
 import com.desmond.squarecamera.CameraActivity
@@ -58,9 +55,15 @@ class MainActivity : AppCompatActivity() {
     private lateinit var mTTS: TextToSpeech
     private lateinit var selectedLanguageCode: String
     private lateinit var languages: String
-    private lateinit var languageList: List<com.google.cloud.translate.Language>
+    private lateinit var languageList: List<Language>
     private var resultList: MutableList<ImageResult> = mutableListOf()
-    private val visionAPI = arrayOf("LANDMARK_DETECTION", "LOGO_DETECTION", "SAFE_SEARCH_DETECTION", "IMAGE_PROPERTIES", "LABEL_DETECTION")
+    private val visionAPI = arrayOf(
+        "LANDMARK_DETECTION",
+        "LOGO_DETECTION",
+        "SAFE_SEARCH_DETECTION",
+        "IMAGE_PROPERTIES",
+        "LABEL_DETECTION"
+    )
     private val api = visionAPI[4]
     private lateinit var selectedItem: Language
     private var photoUri: Uri? = null
@@ -95,15 +98,16 @@ class MainActivity : AppCompatActivity() {
             if (languages.isEmpty()) { // if not found then fetch from server
 
                 doAsync {
-                    val translate = TranslateOptions.newBuilder().setApiKey(getString(R.string.api_key)).build().getService();
-                    val target = Translate.LanguageListOption.targetLanguage("en");
-                    val languages = translate.listSupportedLanguages(target);
+                    val translate =
+                        TranslateOptions.newBuilder().setApiKey(getString(R.string.api_key)).build()
+                            .service
+                    val target = Translate.LanguageListOption.targetLanguage("en")
+                    val languages = translate.listSupportedLanguages(target)
 
                     /* for (language in languages) {
-                     out.printf("Name: %s, Code: %s\n", language.name, language.code);
+                     out.printf("Name: %s, Code: %s\n", language.name, language.code)
                  }*/
-                    val gson = Gson()
-                    val fromJson = gson.toJson(languages)
+                    val fromJson = Gson().toJson(languages)
                     prefUtil.lanagues = fromJson
 
                     uiThread {
@@ -112,30 +116,29 @@ class MainActivity : AppCompatActivity() {
                 }
             } else {
                 val gson = Gson()
-                val languageList = gson.fromJson(languages, Array<com.google.cloud.translate.Language>::class.java).asList()
+                val languageList = gson.fromJson(languages, Array<Language>::class.java).asList()
                 addLanguagesToSpinner(languageList)
             }
         } catch (e: Exception) {
             e.printStackTrace()
+            hideProgress()
             showErrorMessage()
         }
     }
 
     private fun showErrorMessage() {
-        Toast.makeText(this, "Something went wrong please try again.", Toast.LENGTH_LONG).show()
+        Toast.makeText(this, "Something went wrong please try again.", Toast.LENGTH_SHORT).show()
     }
 
     private fun showProgress() {
-        if (progress.visibility != View.VISIBLE)
-            progress.visibility = View.VISIBLE
+        progress.visibility = View.VISIBLE
     }
 
     private fun hideProgress() {
-        if (progress.visibility == View.VISIBLE)
-            progress.visibility = View.GONE
+        progress.visibility = View.GONE
     }
 
-    private fun addLanguagesToSpinner(languageList: List<com.google.cloud.translate.Language>) {
+    private fun addLanguagesToSpinner(languageList: List<Language>) {
         try {
             val customAdapter = CustomAdapter(this, languageList)
             spinner_language.adapter = customAdapter
@@ -160,9 +163,14 @@ class MainActivity : AppCompatActivity() {
     private fun openCameraIntent() {
 
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) {
-            val checkSelfPermission = ContextCompat.checkSelfPermission(this, Manifest.permission.CAMERA)
+            val checkSelfPermission =
+                ContextCompat.checkSelfPermission(this, Manifest.permission.CAMERA)
             if (checkSelfPermission != PackageManager.PERMISSION_GRANTED) {
-                ActivityCompat.requestPermissions(this, arrayOf(Manifest.permission.CAMERA), PERMISSION_CAMERA)
+                ActivityCompat.requestPermissions(
+                    this,
+                    arrayOf(Manifest.permission.CAMERA),
+                    PERMISSION_CAMERA
+                )
             } else {
                 // Start CameraActivity
                 val startCustomCameraIntent = Intent(this, CameraActivity::class.java)
@@ -171,7 +179,11 @@ class MainActivity : AppCompatActivity() {
         }
     }
 
-    override fun onRequestPermissionsResult(requestCode: Int, permissions: Array<out String>, grantResults: IntArray) {
+    override fun onRequestPermissionsResult(
+        requestCode: Int,
+        permissions: Array<out String>,
+        grantResults: IntArray
+    ) {
         super.onRequestPermissionsResult(requestCode, permissions, grantResults)
 
         when (requestCode) {
@@ -194,11 +206,14 @@ class MainActivity : AppCompatActivity() {
             photoUri = data!!.data
             if (photoUri != null) {
                 resultList.clear() // remove previous results from list
-                Log.i("URL", photoUri?.path)
+                Log.i("URL", photoUri?.path!!)
                 Glide.with(this).load(photoUri).into(iv_photo)
 
                 //getDataFromImage(photoUri.path)
-                val bitmap = MediaStore.Images.Media.getBitmap(this.contentResolver, Uri.fromFile(File(photoUri?.path)));
+                val bitmap = MediaStore.Images.Media.getBitmap(
+                    this.contentResolver,
+                    Uri.fromFile(File(photoUri?.path!!))
+                )
                 processImage(bitmap, feature)
             } else {
                 Toast.makeText(this, "Unable to get file path", Toast.LENGTH_LONG).show()
@@ -211,40 +226,40 @@ class MainActivity : AppCompatActivity() {
 
         try {
             showProgress()
-            val featureList = ArrayList<Feature>();
-            featureList.add(feature);
+            val featureList = ArrayList<Feature>()
+            featureList.add(feature)
 
-            val annotateImageRequests = ArrayList<AnnotateImageRequest>();
-            val annotateImageReq = AnnotateImageRequest();
-            annotateImageReq.features = featureList;
-            annotateImageReq.image = this.getImageEncodeImage(bitmap);
-            annotateImageRequests.add(annotateImageReq);
+            val annotateImageRequests = ArrayList<AnnotateImageRequest>()
+            val annotateImageReq = AnnotateImageRequest()
+            annotateImageReq.features = featureList
+            annotateImageReq.image = this.getImageEncodeImage(bitmap)
+            annotateImageRequests.add(annotateImageReq)
 
             doAsync {
                 try {
 
-                    val httpTransport = AndroidHttp.newCompatibleTransport();
-                    val jsonFactory = GsonFactory.getDefaultInstance();
+                    val httpTransport = AndroidHttp.newCompatibleTransport()
+                    val jsonFactory = GsonFactory.getDefaultInstance()
 
-                    val requestInitializer = VisionRequestInitializer(getString(R.string.api_key));
+                    val requestInitializer = VisionRequestInitializer(getString(R.string.api_key))
 
-                    val builder = Vision.Builder(httpTransport, jsonFactory, null);
-                    builder.setVisionRequestInitializer(requestInitializer);
+                    val builder = Vision.Builder(httpTransport, jsonFactory, null)
+                    builder.setVisionRequestInitializer(requestInitializer)
 
-                    val vision = builder.build();
+                    val vision = builder.build()
 
-                    val batchAnnotateImagesRequest = BatchAnnotateImagesRequest();
-                    batchAnnotateImagesRequest.requests = annotateImageRequests;
+                    val batchAnnotateImagesRequest = BatchAnnotateImagesRequest()
+                    batchAnnotateImagesRequest.requests = annotateImageRequests
 
-                    val annotateRequest = vision.images().annotate(batchAnnotateImagesRequest);
-                    annotateRequest.disableGZipContent = true;
-                    val response = annotateRequest.execute();
+                    val annotateRequest = vision.images().annotate(batchAnnotateImagesRequest)
+                    annotateRequest.disableGZipContent = true
+                    val response = annotateRequest.execute()
 
                     convertResponseToString(response)
 
                     // Delete image from file storage
                     if (photoUri != null) {
-                        val file = File(photoUri?.path)
+                        val file = File(photoUri?.path!!)
                         if (file.exists()) {
                             file.delete()
                         }
@@ -253,11 +268,14 @@ class MainActivity : AppCompatActivity() {
                 } catch (e: GoogleJsonResponseException) {
                     hideProgress()
                     showErrorMessage()
-                    Log.d(TAG, "failed to make API request because " + e.getContent());
+                    Log.d(TAG, "failed to make API request because " + e.content)
                 } catch (e: IOException) {
                     hideProgress()
                     showErrorMessage()
-                    Log.d(TAG, "failed to make API request because of other IOException " + e.message);
+                    Log.d(
+                        TAG,
+                        "failed to make API request because of other IOException " + e.message
+                    )
                 }
 
             }
@@ -274,9 +292,9 @@ class MainActivity : AppCompatActivity() {
         try {
             // Convert the bitmap to a JPEG
             // Just in case it's a format that Android understands but Cloud Vision
-            val byteArrayOutputStream = ByteArrayOutputStream();
-            bitmap.compress(Bitmap.CompressFormat.JPEG, 90, byteArrayOutputStream);
-            val imageBytes = byteArrayOutputStream.toByteArray();
+            val byteArrayOutputStream = ByteArrayOutputStream()
+            bitmap.compress(Bitmap.CompressFormat.JPEG, 90, byteArrayOutputStream)
+            val imageBytes = byteArrayOutputStream.toByteArray()
 
             // Base64 encode the JPEG
             base64EncodedImage.encodeContent(imageBytes)
@@ -285,38 +303,38 @@ class MainActivity : AppCompatActivity() {
             showErrorMessage()
             hideProgress()
         }
-        return base64EncodedImage;
+        return base64EncodedImage
     }
 
 
     private fun convertResponseToString(response: BatchAnnotateImagesResponse) {
 
-        val imageResponses = response.responses[0];
+        val imageResponses = response.responses[0]
 
         if (api == "LABEL_DETECTION") {
-            formatAnnotation(imageResponses.labelAnnotations);
+            formatAnnotation(imageResponses.labelAnnotations)
         }
         /*switch (api) {
             case "LANDMARK_DETECTION":
-                entityAnnotations = imageResponses.getLandmarkAnnotations();
-                message = formatAnnotation(entityAnnotations);
-                break;
+                entityAnnotations = imageResponses.getLandmarkAnnotations()
+                message = formatAnnotation(entityAnnotations)
+                break
             case "LOGO_DETECTION":
-                entityAnnotations = imageResponses.getLogoAnnotations();
-                message = formatAnnotation(entityAnnotations);
-                break;
+                entityAnnotations = imageResponses.getLogoAnnotations()
+                message = formatAnnotation(entityAnnotations)
+                break
             case "SAFE_SEARCH_DETECTION":
-                SafeSearchAnnotation annotation = imageResponses.getSafeSearchAnnotation();
-                message = getImageAnnotation(annotation);
-                break;
+                SafeSearchAnnotation annotation = imageResponses.getSafeSearchAnnotation()
+                message = getImageAnnotation(annotation)
+                break
             case "IMAGE_PROPERTIES":
-                ImageProperties imageProperties = imageResponses.getImagePropertiesAnnotation();
-                message = getImageProperty(imageProperties);
-                break;
+                ImageProperties imageProperties = imageResponses.getImagePropertiesAnnotation()
+                message = getImageProperty(imageProperties)
+                break
             case "LABEL_DETECTION":
-                entityAnnotations = imageResponses.getLabelAnnotations();
-                message = formatAnnotation(entityAnnotations);
-                break;
+                entityAnnotations = imageResponses.getLabelAnnotations()
+                message = formatAnnotation(entityAnnotations)
+                break
         }*/
     }
 
@@ -328,30 +346,36 @@ class MainActivity : AppCompatActivity() {
 
                 for (entity: EntityAnnotation in entityAnnotation) {
                     imageTextResults += entity.description.toString() + "@"
-                    val imageResult = ImageResult(entity.description.toString(), entity.score.toString(), "")
+                    val imageResult =
+                        ImageResult(entity.description.toString(), entity.score.toString(), "")
                     resultList.add(imageResult)
                 }
 
-                spinner_language.onItemSelectedListener = object : AdapterView.OnItemSelectedListener {
-                    override fun onNothingSelected(parent: AdapterView<*>?) {
+                spinner_language.onItemSelectedListener =
+                    object : AdapterView.OnItemSelectedListener {
+                        override fun onNothingSelected(parent: AdapterView<*>?) {
+
+                        }
+
+                        override fun onItemSelected(
+                            parent: AdapterView<*>?,
+                            view: View?,
+                            position: Int,
+                            id: Long
+                        ) {
+                            processTranslate(imageTextResults)
+                        }
 
                     }
-
-                    override fun onItemSelected(parent: AdapterView<*>?, view: View?, position: Int, id: Long) {
-                        showProgress()
-                        processTranslate(imageTextResults);
-                    }
-
-                }
 
                 selectedItem = spinner_language.selectedItem as Language
 
                 if (selectedItem.code != "en") {
                     // Translates text into selected language
-                    processTranslate(imageTextResults);
+                    processTranslate(imageTextResults)
                 }
             } else {
-                imageTextResults = "Nothing Found";
+                imageTextResults = "Nothing Found"
                 hideProgress()
             }
 
@@ -383,6 +407,7 @@ class MainActivity : AppCompatActivity() {
 
     private fun processTranslate(imageTextResult: String) {
         try {
+            showProgress()
             selectedItem = spinner_language.selectedItem as Language
             if (selectedItem.code == "en") {
                 hideProgress()
@@ -396,14 +421,15 @@ class MainActivity : AppCompatActivity() {
 
             doAsync {
                 val translate = TranslateOptions.newBuilder().setApiKey(getString(R.string.api_key))
-                        .build().service;
+                    .build().service
                 val translation =
-                        translate.translate(
-                                imageTextResult,
-                                Translate.TranslateOption.sourceLanguage("en"),
-                                Translate.TranslateOption.targetLanguage(selectedItem.code))
+                    translate.translate(
+                        imageTextResult,
+                        Translate.TranslateOption.sourceLanguage("en"),
+                        Translate.TranslateOption.targetLanguage(selectedItem.code)
+                    )
 
-                val translatedText = translation.translatedText;
+                val translatedText = translation.translatedText
 
                 uiThread {
                     hideProgress()

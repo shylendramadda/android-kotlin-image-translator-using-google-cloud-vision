@@ -19,3 +19,13 @@
 # If you keep the line number information, uncomment this to
 # hide the original source file name.
 #-renamesourcefileattribute SourceFile
+-keepattributes Signature
+-keepattributes Exceptions
+-keepattributes InnerClasses
+-keep class **.R
+-keep class **.R$* {
+    *;
+}
+-keepclassmembers class **.R$* {
+    public static <fields>;
+}
