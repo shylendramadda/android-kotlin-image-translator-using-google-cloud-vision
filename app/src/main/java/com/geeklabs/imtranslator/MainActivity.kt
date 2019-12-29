@@ -131,11 +131,15 @@ class MainActivity : AppCompatActivity() {
     }
 
     private fun showProgress() {
-        progress.visibility = View.VISIBLE
+        runOnUiThread {
+            progress.visibility = View.VISIBLE
+        }
     }
 
     private fun hideProgress() {
-        progress.visibility = View.GONE
+        runOnUiThread {
+            progress.visibility = View.GONE
+        }
     }
 
     private fun addLanguagesToSpinner(languageList: List<Language>) {

@@ -25,7 +25,8 @@
                 android:padding="10dp"
                 android:text="@string/app_name"
                 android:textColor="@android:color/black"
-                android:textSize="22sp" />
+                android:textSize="22sp"
+                android:textStyle="bold" />
 
             <ImageView
                 android:id="@+id/iv_photo"
@@ -41,7 +42,9 @@
                 android:layout_height="wrap_content"
                 android:gravity="center"
                 android:text="@string/click_here_to_take_snap"
-                android:textColor="@android:color/black" />
+                android:textColor="@android:color/black"
+                android:textSize="11sp"
+                tools:ignore="SmallSp" />
 
             <LinearLayout
                 android:id="@+id/resultLL"
@@ -55,10 +58,9 @@
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
                     android:layout_margin="10dp"
-                    android:background="@drawable/bg_text"
                     android:padding="10dp"
                     android:text="@string/select_language_to_convert"
-                    android:textColor="@android:color/white"
+                    android:textColor="@color/colorHeaderText"
                     android:textStyle="bold" />
 
                 <Spinner
@@ -67,32 +69,20 @@
                     android:layout_height="wrap_content"
                     android:layout_marginStart="10dp"
                     android:layout_marginEnd="10dp"
-                    android:entries="@array/languages"
-                    android:theme="@style/ThemeOverlay.AppCompat.Light" />
-
-                <AutoCompleteTextView
-                    android:id="@+id/autoCompleteTV"
-                    android:layout_width="match_parent"
-                    android:layout_height="wrap_content"
-                    android:layout_marginStart="10dp"
-                    android:layout_marginEnd="10dp"
                     android:background="@color/gray"
-                    android:hint="@string/select_language"
+                    android:entries="@array/languages"
                     android:padding="10dp"
-                    android:textColor="@color/textColor"
-                    android:visibility="gone"
-                    tools:visibility="visible" />
+                    android:theme="@style/ThemeOverlay.AppCompat.Light" />
 
                 <TextView
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
                     android:layout_margin="10dp"
                     android:layout_marginTop="10dp"
-                    android:background="@drawable/bg_text"
                     android:padding="10dp"
                     android:text="@string/result"
                     android:textAppearance="@style/TextAppearance.AppCompat.Body1"
-                    android:textColor="@android:color/white"
+                    android:textColor="@color/colorHeaderText"
                     android:textStyle="bold" />
 
                 <androidx.recyclerview.widget.RecyclerView

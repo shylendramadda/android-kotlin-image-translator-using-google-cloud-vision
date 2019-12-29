@@ -1,6 +1,7 @@
 <?xml version="1.0" encoding="utf-8"?>
 <LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:app="http://schemas.android.com/apk/res-auto"
+    xmlns:tools="http://schemas.android.com/tools"
     android:layout_width="match_parent"
     android:layout_height="wrap_content"
     android:layout_marginTop="2dp">
@@ -9,7 +10,6 @@
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
         android:layout_marginStart="10dp"
-        android:layout_marginLeft="10dp"
         android:gravity="center"
         android:orientation="vertical">
 
@@ -22,7 +22,8 @@
             app:progressColor="@color/colorProgress"
             app:progressStrokeWidth="5dp"
             app:textColor="@color/colorPrimary"
-            app:textSize="11sp" />
+            app:textSize="11sp"
+            tools:ignore="SmallSp" />
 
         <ImageView
             android:id="@+id/speaker"
@@ -45,18 +46,18 @@
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
             android:padding="10dp"
-            android:text="Actual result"
             android:textAppearance="@style/TextAppearance.AppCompat.Body1"
-            android:textColor="@android:color/black" />
+            android:textColor="@android:color/black"
+            tools:text="Actual result" />
 
         <TextView
             android:id="@+id/tv_translated_text"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
             android:padding="10dp"
-            android:text="Translated result"
             android:textAppearance="@style/TextAppearance.AppCompat.Body1"
-            android:textColor="@android:color/background_dark" />
+            android:textColor="@android:color/background_dark"
+            tools:text="Translated result" />
 
         <View
             android:layout_width="match_parent"

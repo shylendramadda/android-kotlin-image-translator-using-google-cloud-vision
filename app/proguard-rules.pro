@@ -23,6 +23,9 @@
 -keepattributes Exceptions
 -keepattributes InnerClasses
 -keep class **.R
+-keep class com.google.api.*
+-keep class com.google.cloud.*
+-keep class com.desmond.squarecamera.*
 -keep class **.R$* {
     *;
 }

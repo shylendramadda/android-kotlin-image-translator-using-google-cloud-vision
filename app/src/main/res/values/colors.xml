@@ -6,5 +6,6 @@
     <color name="colorPrimaryLight">#cad0f4</color>
     <color name="textColor">#39500c</color>
     <color name="gray">#CDCFC9</color>
+    <color name="colorHeaderText">#2196F3</color>
     <color name="colorProgress">#89e77c</color>
 </resources>
